@@ -345,7 +345,7 @@ header.top{box-shadow:0 2px 12px rgba(0,0,0,.35)}
 
 <section id="start">
   <img class="hero-logo" id="heroLogo" alt="Mzansi Manager 2026">
-  <p class="lede">Three divisions, 48 South African clubs, full squads with faces, ratings and passports.
+  <p class="lede">Five divisions, 80 South African clubs, full squads with faces, ratings and passports.
   You don't kick the ball — you pick the team, watch the match unfold, work the market and <b>build a club over seasons</b>.</p>
 
 <!-- Ad slot 1 (provided by you). This network's script is not on Claude's allow-list, so it will
@@ -374,7 +374,7 @@ header.top{box-shadow:0 2px 12px rgba(0,0,0,.35)}
 
   <div class="step">
     <h2>Choose your club</h2>
-    <p class="note">48 clubs across three divisions. Start at the bottom if you want the hard road.</p>
+    <p class="note">80 clubs across five divisions. Start at the bottom if you want the hard road.</p>
     <div class="chipbar" style="padding-left:0;border:none" id="pickTierBar"></div>
     <div class="grid" id="clubGrid"></div>
   </div>
@@ -468,7 +468,7 @@ header.top{box-shadow:0 2px 12px rgba(0,0,0,.35)}
 </div>
   <div style="max-width:1200px;margin:0 auto;padding:0 14px 90px">
     <div class="promo">
-      <p>Kit and badge design by Panar.</p>
+      <p>Game developed through Panar.</p>
       <a href="https://panar.co.za" target="_blank" rel="noopener">Visit panar.co.za</a>
     </div>
   </div>
@@ -496,7 +496,7 @@ const PROMOTED = 2;
 
 /* base = sporting strength 1-10 · fin = transfer kitty in millions · youth = academy level 1-5 */
 const CLUBS = [
-  /* ---------------- Tier 1 — Betway Premiership ---------------- */
+  /* ---------------- Tier 1 — Mzansi Premiership ---------------- */
   { n:'Mamelodi Sundowns', s:'Sundowns', nick:'Masandawana', city:'Pretoria', t:0, base:9.6, fin:150, youth:5, c1:'#f9e300', c2:'#0b7a3b', scout:'SAM' },
   { n:'Orlando Pirates', s:'Pirates', nick:'Buccaneers', city:'Soweto', t:0, base:9.0, fin:105, youth:4, c1:'#1a1a1a', c2:'#eeeeee', scout:'AFR' },
   { n:'Kaizer Chiefs', s:'Chiefs', nick:'Amakhosi', city:'Soweto', t:0, base:8.1, fin:95, youth:4, c1:'#d4af00', c2:'#000000', scout:'AFR' },
@@ -514,7 +514,7 @@ const CLUBS = [
   { n:'Kruger United', s:'Kruger', nick:'The Wildcats', city:'Mbombela', t:0, base:6.0, fin:17, youth:2, c1:'#166534', c2:'#fbbf24', scout:'AFR' },
   { n:'Milford FC', s:'Milford', nick:'The Millers', city:'Durban', t:0, base:6.4, fin:21, youth:3, c1:'#1e40af', c2:'#e5e7eb', scout:'AFR' },
 
-  /* ---------------- Tier 2 — Motsepe Championship ---------------- */
+  /* ---------------- Tier 2 — Mzansi Championship ---------------- */
   { n:'Orbit College FC', s:'Orbit', nick:'The Scholars', city:'Rustenburg', t:1, base:5.7, fin:9, youth:2, c1:'#1f4ea1', c2:'#f59e0b', scout:'AFR' },
   { n:'Magesi FC', s:'Magesi', nick:'Dinaledi', city:'Limpopo', t:1, base:5.6, fin:8, youth:2, c1:'#1e3a8a', c2:'#facc15', scout:'AFR' },
   { n:'Cape Town Spurs', s:'CT Spurs', nick:'The Urban Warriors', city:'Cape Town', t:1, base:5.5, fin:8, youth:3, c1:'#f5f5f5', c2:'#1b365d', scout:'AFR' },
@@ -532,7 +532,7 @@ const CLUBS = [
   { n:'Mbombela United', s:'Mbombela', nick:'Bahlabani', city:'Mbombela', t:1, base:4.5, fin:4, youth:1, c1:'#15803d', c2:'#fef08a', scout:'AFR' },
   { n:'Tornado FC', s:'Tornado', nick:'Sekhukhutla', city:'Upington', t:1, base:4.4, fin:3, youth:1, c1:'#0f766e', c2:'#fca5a5', scout:'AFR' },
 
-  /* ---------------- Tier 3 — Motsepe League ---------------- */
+  /* ---------------- Tier 3 — Mzansi 3rd division ---------------- */
   { n:'Bright PMB FC', s:'Bright PMB', nick:'Amabutho', city:'Pietermaritzburg', t:2, base:4.0, fin:2.5, youth:5, c1:'#F5B800', c2:'#111111', scout:'AFR', badge:'bright', youthClub:true },
   { n:'Baroka FC', s:'Baroka', nick:'Bakgaga', city:'Ga-Mphahlele', t:2, base:4.4, fin:3, youth:2, c1:'#0a6b45', c2:'#ffffff', scout:'AFR' },
   { n:'Black Leopards', s:'Leopards', nick:'Lidoda Duvha', city:'Thohoyandou', t:2, base:4.3, fin:3, youth:2, c1:'#0b0b0b', c2:'#e0b200', scout:'AFR' },
@@ -2987,7 +2987,7 @@ buildTierChips();
     const bar = $('#pickTierBar');
     if (bar) bar.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', +x.dataset.tier === pickTier));
     const hint = $('#startHint');
-    if (hint) hint.textContent = 'Bright PMB FC is selected by default — the game\'s youth academy club. Pick another if you\'d rather.';
+    if (hint) hint.textContent = 'select default — the game\'s youth academy club. Pick another if you\'d rather.';
   }
 })();
 $('#startBtn').onclick = () => {
@@ -4327,7 +4327,7 @@ function viewCups() {
   const v = $('#v-cups');
   const nedb = { name: CUP_NAME, winner: G.cup.winner, log: G.cup.log };
   v.innerHTML =
-    compPanel(nedb, CUP_ROUNDS, 'all 48 clubs, straight knockout') +
+    compPanel(nedb, CUP_ROUNDS, 'all 80 clubs, straight knockout') +
     compPanel(G.super8, S8_ROUNDS, 'last season\'s top eight, early doors') +
     compPanel(G.knockout, KO_ROUNDS, 'the top two divisions, mid-season') +
     continentalPanel('caf', CAF_NAME, 'cafHistory', 'Champions of Africa') +
@@ -4661,7 +4661,7 @@ function viewInfo() {
   v.innerHTML = `<div class="panel"><h3>How to play Mzansi Manager<span class="sub">a quick guide</span></h3>
     <div class="pad" style="font-size:14px;line-height:1.65">
       <p><b>The idea.</b> You manage a South African football club through as many seasons as you like. You don't control players on the pitch — you pick the squad, set the tactics, work the transfer market, and watch results unfold.</p>
-      <p><b>Matchday.</b> Hit "Play matchday" to watch your game live with dots on a pitch, or turn off live mode in Team talk to sim instantly. Half time lets you make up to five substitutions.</p>
+      <p><b>Matchday.</b> Hit "Play matchday" to watch your game live on a pitch, or turn off live mode in Team talk to sim instantly. Half time lets you make up to five substitutions.</p>
       <p><b>Team talk.</b> Pick a formation, tap a shirt then a bench player to swap them, and see who's injured.</p>
       <p><b>Transfers.</b> Bid on listed players, sign free agents, sell or release your own, and renew contracts before they run out — a player who runs down his deal for nothing is on you, not the game.</p>
       <p><b>Academy.</b> Upgrade your youth setup and promote prospects into the senior squad. A strong academy is the cheapest way to build a team.</p>
@@ -4832,7 +4832,7 @@ function viewManager() {
     </div></div>
   <div class="panel"><h3>Earnings<span class="sub">as manager, separate from the club's books</span></h3>
     <dl class="kv">
-      <dt>Wage</dt><dd>${money(m.wage || 0)} a season <span class="hint">(${money((m.wage || 0) / 12)}/mo)</span></dd>
+      <dt>Wage</dt><dd>${money(m.wage || 0)} a month <span class="hint">(${money((m.wage || 0) / 12)}/mo)</span></dd>
       <dt>Career earnings</dt><dd>${money(m.careerEarnings || 0)}</dd>
     </dl>
     <div class="pad" style="border-top:1px solid var(--line)">
