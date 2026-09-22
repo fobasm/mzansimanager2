@@ -2839,7 +2839,7 @@ const SAVE_PREFIX = 'mzansi_manager_2026_slot_';
 const SLOTNAME_PREFIX = 'mzansi_manager_2026_slotname_';
 const SLOT_COUNT = 5;
 const LAST_SLOT_KEY = 'mzansi_manager_2026_last';
-let slot = 1;
+let slot = 1; let leavingApp = false;
 let G = null, tab = 'match';
 let pickTier = 2, pickClub = null, pickAvatar = 'blank';
 let squadSort = 'rating', txFilter = 'ALL', txSearch = '', tableTier = 0, fxRound = 0, statTier = 0, newsFilter = 'ALL';
@@ -3009,7 +3009,7 @@ $('#homeBtn').onclick = () => {
   openModal('Back to team selection?', '<p style="margin:0;color:var(--dim)">Your career stays saved in this slot. This just takes you back to the landing page.</p>',
     `<button class="btn ghost sm" onclick="closeModal()">Stay in this career</button><button class="btn sm" id="homeYes">Go to team selection</button>`);
   const yes = $('#homeYes');
-  if (yes) yes.onclick = () => { try { localStorage.removeItem(LAST_SLOT_KEY); } catch (e) { } location.reload(); };
+  if (yes) yes.onclick = () => { leavingApp = true; try { localStorage.removeItem(LAST_SLOT_KEY); } catch (e) { } location.reload(); };
 };
 $('#menuBtn').onclick = () => openDrawer();
 $('#drawerScrim').onclick = () => closeDrawer();
@@ -3017,7 +3017,7 @@ $('#backBtn').onclick = navBack;
 $('#fwdBtn').onclick = navFwd;
 $('#careerBtn').onclick = openCareerModal;
 window.addEventListener('beforeunload', e => {
-  if (!G) return;
+  if (!G || leavingApp) return;
   save();
   if (liveState) { e.preventDefault(); e.returnValue = ''; return ''; }
 });
@@ -3215,7 +3215,7 @@ function openCareerModal() {
     save();
     openModal('Switch save slot', '<p style="margin:0 0 10px;color:var(--dim)">This leaves your current career saved and returns to the club picker.</p>',
       `<button class="btn ghost sm" onclick="closeModal()">Cancel</button><button class="btn sm" id="switchYes2">Go to selection</button>`);
-    $('#switchYes2').onclick = () => { try { localStorage.removeItem(LAST_SLOT_KEY); } catch (e) { } location.reload(); };
+    $('#switchYes2').onclick = () => { leavingApp = true; try { localStorage.removeItem(LAST_SLOT_KEY); } catch (e) { } location.reload(); };
   };
 }
 function renderActions() {
@@ -4553,7 +4553,7 @@ function viewClub() {
     save();
     openModal('Switch save slot', '<p style="margin:0 0 10px;color:var(--dim)">This leaves your current career saved and returns to the club picker.</p>',
       `<button class="btn ghost sm" onclick="closeModal()">Cancel</button><button class="btn sm" id="switchYes">Go to selection</button>`);
-    $('#switchYes').onclick = () => { try { localStorage.removeItem(LAST_SLOT_KEY); } catch (e) { } location.reload(); };
+    $('#switchYes').onclick = () => { leavingApp = true; try { localStorage.removeItem(LAST_SLOT_KEY); } catch (e) { } location.reload(); };
   };
   $('#peekGo').onclick = () => squadPeek(+$('#clubPeek').value);
   $('#wipe').onclick = () => {
