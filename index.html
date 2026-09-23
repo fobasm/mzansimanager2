@@ -58,7 +58,14 @@
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
-body{margin:0;color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased; background:  radial-gradient(60% 50% at 12% -6%,rgba(255,242,0,.35),transparent 60%),  radial-gradient(55% 46% at 108% 6%,rgba(255,90,0,.3),transparent 62%),  radial-gradient(60% 55% at 100% 100%,rgba(255,20,120,.25),transparent 60%),  radial-gradient(50% 45% at -4% 96%,rgba(255,150,0,.25),transparent 60%),  linear-gradient(180deg,var(--bg2),var(--bg) 55%,var(--bg)); background-attachment:fixed}
+body{margin:0;color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+background:
+ radial-gradient(60% 50% at 12% -6%,rgba(255,242,0,.35),transparent 60%),
+ radial-gradient(55% 46% at 108% 6%,rgba(255,90,0,.3),transparent 62%),
+ radial-gradient(60% 55% at 100% 100%,rgba(255,20,120,.25),transparent 60%),
+ radial-gradient(50% 45% at -4% 96%,rgba(255,150,0,.25),transparent 60%),
+ linear-gradient(180deg,var(--bg2),var(--bg) 55%,var(--bg));
+background-attachment:fixed}
 h1,h2,h3,h4{font-family:var(--head);font-weight:700;margin:0;line-height:1.05}
 button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
 button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -81,7 +88,14 @@ img{max-width:100%}
 .club b{display:block;font-family:var(--head);font-size:17px;font-weight:600;line-height:1.1}
 .club small{color:var(--faint);font-size:11.5px}
 .crest{flex:0 0 auto;display:inline-block;border-radius:3px 3px 50% 50%/3px 3px 34% 34%;border:1px solid rgba(0,0,0,.4)}
+.rbox{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:13px}
+.rbox>div{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);text-align:center;padding:9px 4px}
+.rbox b{display:block;font-family:var(--head);font-size:24px;line-height:1;color:var(--gold)}
+.rbox span{font-size:12px;color:var(--faint)}
 .crest.img{border:none;border-radius:50%;background-size:contain;background-repeat:no-repeat;background-position:center}
+.att{display:grid;grid-template-columns:34px 1fr 26px;gap:5px 8px;align-items:center;font-size:13px}
+.att b{color:var(--faint);font-weight:600}
+.bar.g>i{background:var(--up)}
 .avpick{display:flex;gap:8px;flex-wrap:wrap}
 .avbtn{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;line-height:0}
 .avbtn[aria-pressed="true"]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
@@ -232,6 +246,8 @@ tr.zone-down td:first-child{box-shadow:inset 3px 0 var(--down)}
 .tick{display:grid;grid-template-columns:38px 20px 1fr;gap:8px;padding:6px 12px;border-bottom:1px solid var(--line);font-size:13.5px;align-items:baseline}
 .tick .m{font-family:var(--head);color:var(--gold)}
 .tick:last-child{border-bottom:none}
+.banner{background:linear-gradient(100deg,var(--gold),var(--teal));color:#241300;font-family:var(--head);font-size:20px;font-weight:800;padding:6px 12px;border-radius:4px;text-align:center;margin:8px 0}
+.tick.goal{color:var(--gold);font-weight:700}
 .subrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 @media (max-width:560px){.subrow{grid-template-columns:1fr}}
 
@@ -2736,20 +2752,25 @@ function avatarSVG(id, size) {
   return faceSVG({ face: MGR_FACES[id] }, s, '#2b3a33');
 }
 
-/* ---------------- crests ---------------- */
 function crestHTML(t, size) {
   const s = size || 22;
   if (t.badge === 'bright') {
     return `<span class="crest img" style="width:${s}px;height:${s}px;background-image:url('${IMG_BRIGHT}')"></span>`;
   }
   if (t.icon) return crestCustomHTML(t, s);
+  const id = ++CREST_UID;
   const initials = t.s.replace(/[^A-Za-z ]/g, '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const dark = isDark(t.c1);
-  return `<span class="crest" style="width:${s}px;height:${s * 1.16}px;
-    background:linear-gradient(104deg,${t.c1} 0 50%,${t.c2} 50% 100%);
-    box-shadow:inset 0 ${Math.max(1, s * 0.05)}px ${s * 0.12}px rgba(255,255,255,.35), inset 0 -${s * 0.1}px ${s * 0.18}px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.4);
-    display:inline-grid;place-items:center;font-family:var(--head);font-size:${Math.max(7, s * 0.42)}px;font-weight:700;
-    color:${dark ? '#fff' : '#111'};text-shadow:0 1px 1px rgba(0,0,0,.45)">${initials}</span>`;
+  const h = Math.round(s * 1.15);
+  return `<span class="crest" style="width:${s}px;height:${h}px;border:none;border-radius:0;background:none">
+    <svg viewBox="0 0 40 46" width="${s}" height="${h}">
+      <defs><clipPath id="cb${id}"><path d="M20 1L38 7V22C38 33 30 41 20 45C10 41 2 33 2 22V7Z"/></clipPath></defs>
+      <path d="M20 1L38 7V22C38 33 30 41 20 45C10 41 2 33 2 22V7Z" fill="${t.c1}"/>
+      <g clip-path="url(#cb${id})"><rect x="0" y="27" width="40" height="20" fill="${t.c2}"/></g>
+      <path d="M20 1L38 7V22C38 33 30 41 20 45C10 41 2 33 2 22V7Z" fill="none" stroke="${t.c2}" stroke-width="2"/>
+      <text x="20" y="24" text-anchor="middle" font-family="Big Shoulders Display,Impact,Arial Narrow,sans-serif" font-weight="800" font-size="${initials.length > 2 ? 12 : 15}" fill="${dark ? '#fff' : '#111'}">${initials}</text>
+    </svg>
+  </span>`;
 }
 
 /* ---------------- kits ---------------- */
@@ -3421,37 +3442,18 @@ function startLive() {
   const m = G.fixtures[tier][G.round][idx];
   const ctx = createMatch(G, m.h, m.a, false);
   const mySide = m.h === G.myTeam ? 'h' : 'a';
-  liveState = { ctx, m, tier, mySide, minute: 0, shown: 0, half: 1, speed: 1, timer: null, ballX: 50, ballY: 75, done: false };
+  liveState = {
+    ctx, m, tier, mySide, minute: 0, half: 1,
+    speed: 1, paused: false, started: false, ft: false,
+    timer: null, raf: null,
+    ballX: 50, ballY: 75, ball: { tx: 50, ty: 75 },
+    pos: {}, flash: null
+  };
   ctx.evAll = [];
   runPeriod(G, ctx, 1, 45);
   liveState.firstHalf = ctx.ev.slice();
   renderLive();
-  runClock();
-}
-
-function livePitchSVG() {
-  const ls = liveState, ctx = ls.ctx;
-  const slotsH = ctx.slotsH, slotsA = ctx.slotsA;
-  const H = G.teams[ctx.h], A = G.teams[ctx.a];
-  const coordsH = FORM_COORDS[H.formation] || FORM_COORDS['4-4-2'];
-  const coordsA = FORM_COORDS[A.formation] || FORM_COORDS['4-4-2'];
-  const dots = [];
-  coordsH.forEach((c, i) => dots.push({ id: 'h' + i, x: c[0], y: 150 - c[1] * 0.72, col: H.c1, ring: H.c2 }));
-  coordsA.forEach((c, i) => dots.push({ id: 'a' + i, x: 100 - c[0], y: c[1] * 0.72, col: A.c1 === H.c1 ? A.c2 : A.c1, ring: A.c2 }));
-  ls.dots = dots;
-  return `<svg class="pitch" viewBox="0 0 100 150" id="pitchSvg" aria-label="Live match">
-    <rect width="100" height="150" fill="var(--pitch)"/>
-    ${[0,1,2,3,4,5,6,7].map(i => `<rect y="${i * 18.75}" width="100" height="9.4" fill="#ffffff" opacity=".035"/>`).join('')}
-    <rect x="4" y="4" width="92" height="142" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width=".7"/>
-    <line x1="4" y1="75" x2="96" y2="75" stroke="#fff" stroke-opacity=".5" stroke-width=".7"/>
-    <circle cx="50" cy="75" r="13" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width=".7"/>
-    <rect x="26" y="4" width="48" height="19" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width=".7"/>
-    <rect x="26" y="127" width="48" height="19" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width=".7"/>
-    <rect x="38" y="4" width="24" height="8" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width=".6"/>
-    <rect x="38" y="138" width="24" height="8" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width=".6"/>
-    ${dots.map(d => `<circle id="${d.id}" cx="${d.x}" cy="${d.y}" r="2.6" fill="${d.col}" stroke="${d.ring}" stroke-width=".7"/>`).join('')}
-    <circle id="ball" cx="50" cy="75" r="1.7" fill="#fff" stroke="#111" stroke-width=".4"/>
-  </svg>`;
+  requestAnimationFrame(liveDraw);
 }
 
 function renderLive() {
@@ -3460,34 +3462,67 @@ function renderLive() {
   const v = $('#v-match');
   v.innerHTML = `<div class="livewrap">
     <div class="livebar">
-      <div class="nm">${crestHTML(H, 20)} ${esc(H.s)}</div>
-      <div class="sc"><span id="liveScore">0–0</span><span class="clock" id="liveClock">0'</span></div>
-      <div class="nm a">${esc(A.s)} ${crestHTML(A, 20)}</div>
+      <div class="nm">${crestHTML(H, 24)} ${esc(H.s)}</div>
+      <div class="sc"><span id="liveScore">0–0</span><span class="clock" id="liveClock">Kick-off</span></div>
+      <div class="nm a">${esc(A.s)} ${crestHTML(A, 24)}</div>
     </div>
-    ${livePitchSVG()}
-    <div class="chipbar" id="liveCtl">
-      <button class="chip" data-sp="2" aria-pressed="false">Slow</button>
-      <button class="chip" data-sp="1" aria-pressed="true">Normal</button>
-      <button class="chip" data-sp="0.4" aria-pressed="false">Fast</button>
-      <button class="chip" id="liveSkip">Skip to result</button>
-    </div>
-    <div class="ticker" id="ticker"></div>
+    <canvas id="livePitch" class="pitch" width="560" height="360" aria-label="Live match view"></canvas>
+    <div id="liveBanner"></div>
+    <div class="chipbar" id="liveCtl"></div>
+    <div id="liveSpot"></div>
+    <div class="ticker" id="ticker"><div class="hint" style="padding:8px 12px">Kick-off is moments away.</div></div>
   </div>`;
   $('#actions').innerHTML = '';
-  document.querySelectorAll('#liveCtl [data-sp]').forEach(b => b.onclick = () => {
-    liveState.speed = +b.dataset.sp;
-    document.querySelectorAll('#liveCtl [data-sp]').forEach(x => x.setAttribute('aria-pressed', x === b));
-  });
-  $('#liveSkip').onclick = skipLive;
+  liveControls();
   updateLiveScore();
 }
+
+function liveControls() {
+  const ls = liveState, c = $('#liveCtl'); if (!c) return;
+  let h = '';
+  if (ls.ft) h = `<button class="chip" id="liveDone">Full time — see the report</button>`;
+  else if (!ls.started) h = `<button class="chip" id="liveGo">Kick off</button>`;
+  else h = `<button class="chip" id="livePause">${ls.paused ? 'Resume' : 'Pause'}</button>`;
+  if (!ls.ft) {
+    h += [1, 2, 4, 8].map(s => `<button class="chip" data-sp="${s}" aria-pressed="${ls.speed === s}">${s}x</button>`).join('');
+    h += `<button class="chip" id="liveSkip">Skip to result</button>`;
+  }
+  c.innerHTML = h;
+  const go = $('#liveGo'); if (go) go.onclick = liveGo;
+  const pa = $('#livePause'); if (pa) pa.onclick = livePause;
+  const done = $('#liveDone'); if (done) done.onclick = endLive;
+  c.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => { ls.speed = +b.dataset.sp; liveControls(); if (ls.timer) liveSchedule(); });
+  const sk = $('#liveSkip'); if (sk) sk.onclick = skipLive;
+}
+
+function liveGo() {
+  const ls = liveState;
+  ls.started = true; ls.paused = false;
+  liveBanner('');
+  liveControls();
+  liveSchedule();
+}
+
+function livePause() {
+  const ls = liveState;
+  ls.paused = !ls.paused;
+  if (ls.paused) { clearTimeout(ls.timer); ls.timer = null; } else liveSchedule();
+  liveControls();
+}
+
+function liveBanner(txt) {
+  const b = $('#liveBanner'); if (b) b.innerHTML = txt ? `<div class="banner">${txt}</div>` : '';
+}
+
 function updateLiveScore() {
   const ls = liveState;
   const goals = ls.ctx.ev.filter(e => e.type === 'goal' && e.min <= ls.minute);
   const hg = goals.filter(e => e.side === 'h').length, ag = goals.filter(e => e.side === 'a').length;
   const sc = $('#liveScore'); if (sc) sc.textContent = `${hg}–${ag}`;
-  const ck = $('#liveClock'); if (ck) ck.textContent = ls.minute + "'";
+  const ck = $('#liveClock');
+  if (ck) ck.textContent = ls.ft ? 'Full time' : !ls.started ? (ls.minute > 0 ? 'Half-time' : 'Kick-off') : ls.minute + "'";
 }
+
 function pushTick(e) {
   if (e.type === 'goal') playSound('goal');
   else if (e.type === 'card') playSound('card');
@@ -3499,59 +3534,125 @@ function pushTick(e) {
   else if (e.type === 'card') txt = `${esc(e.sName)} (${esc(team.s)}) is booked`;
   else if (e.type === 'injury') txt = `${esc(e.sName)} (${esc(team.s)}) goes down injured`;
   else txt = `${esc(team.s)} bring on ${esc(e.sName)}`;
-  const row = el('div', 'tick', `<span class="m">${e.min}'</span><span>${icon}</span><span>${txt}</span>`);
+  const row = el('div', 'tick' + (e.type === 'goal' ? ' goal' : ''), `<span class="m">${e.min}'</span><span>${icon}</span><span>${txt}</span>`);
   t.insertBefore(row, t.firstChild);
 }
 
-function moveDots() {
-  const ls = liveState, svg = $('#pitchSvg'); if (!svg) return;
-  const bx = ls.ballX, by = ls.ballY;
-  const ball = svg.querySelector('#ball');
-  if (ball) { ball.setAttribute('cx', bx.toFixed(1)); ball.setAttribute('cy', by.toFixed(1)); }
-  ls.dots.forEach(d => {
-    const node = svg.querySelector('#' + d.id); if (!node) return;
-    const pull = d.id[0] === 'h' ? 0.26 : 0.26;
-    const tx = d.x + (bx - d.x) * pull * (0.5 + Math.random() * 0.5);
-    const ty = d.y + (by - d.y) * pull * (0.5 + Math.random() * 0.5);
-    node.setAttribute('cx', (tx + (Math.random() - 0.5) * 2).toFixed(1));
-    node.setAttribute('cy', (ty + (Math.random() - 0.5) * 2).toFixed(1));
-  });
+function liveSchedule() {
+  const ls = liveState;
+  clearTimeout(ls.timer);
+  ls.timer = setTimeout(liveTick, 460 / ls.speed);
 }
 
-function runClock() {
+function liveTick() {
   const ls = liveState;
-  const endAt = ls.half === 1 ? 45 : 92;
-  ls.timer = setInterval(() => {
-    ls.minute++;
-    /* ball drifts, biased by who is on top */
-    const s = ls.ctx.sh.att - ls.ctx.sa.att;
-    const bias = clamp(s * 0.14, -1.6, 1.6);
-    ls.ballY = clamp(ls.ballY - bias + (Math.random() - 0.5) * 26, 10, 140);
-    ls.ballX = clamp(ls.ballX + (Math.random() - 0.5) * 30, 8, 92);
-    moveDots();
-    ls.ctx.ev.forEach(e => {
-      if (!e._shown && e.min <= ls.minute) {
-        e._shown = true; pushTick(e);
-        if (e.type === 'goal') ls.ballY = e.side === 'h' ? 12 : 138;
+  if (!ls || ls.paused) return;
+  ls.minute++;
+  const s = ls.ctx.sh.att - ls.ctx.sa.att;
+  const bias = clamp(s * 0.14, -1.6, 1.6);
+  ls.ball.ty = clamp(ls.ballY - bias + (Math.random() - 0.5) * 26, 10, 140);
+  ls.ball.tx = clamp(ls.ballX + (Math.random() - 0.5) * 30, 8, 92);
+  ls.ctx.ev.forEach(e => {
+    if (!e._shown && e.min <= ls.minute) {
+      e._shown = true; pushTick(e);
+      if (e.type === 'goal') {
+        ls.flash = { t: performance.now(), txt: 'GOAL! ' + e.sName };
+        ls.ball.ty = e.side === 'h' ? 12 : 138;
       }
-    });
-    updateLiveScore();
-    if (ls.minute >= endAt) { clearInterval(ls.timer); ls.timer = null; ls.half === 1 ? halfTime() : endLive(); }
-  }, 240 * ls.speed);
+      if (e.scorer) {
+        const xi = e.side === 'h' ? ls.ctx.xiH : ls.ctx.xiA;
+        const slots = e.side === 'h' ? ls.ctx.slotsH : ls.ctx.slotsA;
+        const pi = xi.findIndex(pl => pl.id === e.scorer);
+        const p = pi >= 0 ? xi[pi] : null;
+        const spot = $('#liveSpot');
+        if (p && spot) spot.innerHTML = `<div class="spot">${faceSVG(p, 46, G.teams[e.team].c1)}<div><b>${esc(p.name)}</b><span class="hint">#${pi + 1} · ${slots[pi] || p.pos} · ${esc(G.teams[e.team].s)}</span></div></div>`;
+      }
+    }
+  });
+  updateLiveScore();
+  const endAt = ls.half === 1 ? 45 : 92;
+  if (ls.minute >= endAt) {
+    ls.timer = null;
+    if (ls.half === 1) { liveBanner('Half-time'); liveControls(); halfTime(); }
+    else { ls.ft = true; liveBanner('Full time'); liveControls(); }
+    return;
+  }
+  liveSchedule();
 }
 
 function skipLive() {
   const ls = liveState;
-  if (ls.timer) { clearInterval(ls.timer); ls.timer = null; }
+  if (ls.timer) { clearTimeout(ls.timer); ls.timer = null; }
   if (ls.half === 1) {
     aiSubs(G, ls.ctx);
     runPeriod(G, ls.ctx, 46, 92);
     ls.half = 2;
   }
   ls.minute = 92;
+  ls.started = true;
   ls.ctx.ev.forEach(e => { if (!e._shown) { e._shown = true; pushTick(e); } });
   updateLiveScore();
-  endLive();
+  ls.ft = true;
+  liveBanner('Full time');
+  liveControls();
+}
+
+function liveDraw() {
+  const ls = liveState;
+  if (!ls) return;
+  const cv = $('#livePitch');
+  if (!cv) { requestAnimationFrame(liveDraw); return; }
+  const c = cv.getContext('2d'), W = cv.width, Hh = cv.height;
+  const H = G.teams[ls.ctx.h], A = G.teams[ls.ctx.a];
+  ls.ballX += (ls.ball.tx - ls.ballX) * 0.08;
+  ls.ballY += (ls.ball.ty - ls.ballY) * 0.08;
+  c.fillStyle = '#1c7a4c'; c.fillRect(0, 0, W, Hh);
+  c.fillStyle = 'rgba(0,0,0,.06)';
+  for (let i = 0; i < 8; i += 2) c.fillRect(i * W / 8, 0, W / 8, Hh);
+  c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = 2;
+  c.strokeRect(6, 6, W - 12, Hh - 12);
+  c.beginPath(); c.moveTo(W / 2, 6); c.lineTo(W / 2, Hh - 6); c.stroke();
+  c.beginPath(); c.arc(W / 2, Hh / 2, Hh * 0.19, 0, Math.PI * 2); c.stroke();
+  c.strokeRect(6, Hh * 0.24, W * 0.12, Hh * 0.52);
+  c.strokeRect(W - 6 - W * 0.12, Hh * 0.24, W * 0.12, Hh * 0.52);
+  const coordsH = FORM_COORDS[H.formation] || FORM_COORDS['4-4-2'];
+  const coordsA = FORM_COORDS[A.formation] || FORM_COORDS['4-4-2'];
+  const ballCX = (1 - ls.ballY / 150) * W, ballCY = ls.ballX / 100 * Hh;
+  const drawSide = (coords, prefix, col1, col2, away, xi, slots) => {
+    coords.forEach((cc, i) => {
+      const advX = cc[1] * 0.72 / 150 * W;
+      const bx = away ? (W - advX) : advX;
+      const by = (away ? (100 - cc[0]) : cc[0]) / 100 * Hh;
+      const key = prefix + i;
+      const tx = bx + (ballCX - bx) * 0.22, ty = by + (ballCY - by) * 0.22;
+      const q = ls.pos[key] || (ls.pos[key] = { x: bx, y: by });
+      q.x += (tx - q.x) * 0.06; q.y += (ty - q.y) * 0.06;
+      const r = Math.max(7, Hh * 0.032);
+      c.beginPath(); c.arc(q.x, q.y, r, 0, Math.PI * 2);
+      c.fillStyle = col1; c.fill(); c.lineWidth = 1.5; c.strokeStyle = col2; c.stroke();
+      const num = i + 1, slot = (slots && slots[i]) || (xi && xi[i] && xi[i].pos) || '';
+      c.fillStyle = isDark(col1) ? '#fff' : '#111';
+      c.font = `700 ${Math.max(7, r * 0.9)}px sans-serif`;
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(String(num), q.x, q.y + 0.5);
+      c.font = `600 ${Math.max(6, r * 0.62)}px sans-serif`;
+      c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = 2;
+      c.strokeText(slot, q.x, q.y + r + Hh * 0.028);
+      c.fillStyle = 'rgba(255,255,255,.92)';
+      c.fillText(slot, q.x, q.y + r + Hh * 0.028);
+    });
+  };
+  drawSide(coordsH, 'h', H.c1, H.c2, false, ls.ctx.xiH, ls.ctx.slotsH);
+  drawSide(coordsA, 'a', A.c1 === H.c1 ? A.c2 : A.c1, A.c2, true, ls.ctx.xiA, ls.ctx.slotsA);
+  c.beginPath(); c.arc(ballCX, ballCY, Math.max(4, Hh * 0.015), 0, Math.PI * 2);
+  c.fillStyle = '#fff'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = '#111'; c.stroke();
+  if (ls.flash && performance.now() - ls.flash.t < 1800) {
+    c.fillStyle = 'rgba(0,0,0,.55)'; c.fillRect(0, Hh / 2 - 28, W, 56);
+    c.fillStyle = '#fff200'; c.font = `800 ${Math.round(Hh * 0.13)}px "Big Shoulders Display",Impact,sans-serif`;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(ls.flash.txt, W / 2, Hh / 2);
+  }
+  requestAnimationFrame(liveDraw);
 }
 
 function halfTime() {
@@ -3575,7 +3676,9 @@ function halfTime() {
     ls.half = 2; ls.minute = 45;
     aiSubs(G, ls.ctx);
     runPeriod(G, ls.ctx, 46, 92);
-    runClock();
+    ls.started = true; ls.paused = false;
+    liveControls();
+    liveSchedule();
   };
   $('#modal .x').onclick = resume;
   let selOut = null;
@@ -3786,6 +3889,15 @@ function viewSquad() {
 }
 
 /* ---------------- player profile ---------------- */
+/* ---------------- player profile ---------------- */
+const hashS = s => { let h = 2166136261; for (let i = 0; i < String(s).length; i++) { h ^= String(s).charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
+const ATTR_PROFILE = { ST:[3,8,-6,2,-25,2], CF:[0,6,-2,4,-25,0], RM:[6,0,2,7,-18,-6], LM:[6,0,2,7,-18,-6], CM:[-2,-2,7,3,-6,0], CDM:[-4,-8,4,-2,8,6], CB:[-5,-25,-8,-14,10,8], RB:[4,-15,-2,0,4,2], LB:[4,-15,-2,0,4,2], GK:[0,0,0,0,0,0] };
+function playerAttrBars(p) {
+  const gk = p.pos === 'GK';
+  const L = gk ? ['DIV','HAN','KIC','REF','SPD','POS'] : ['PAC','SHO','PAS','DRI','DEF','PHY'];
+  const prof = ATTR_PROFILE[p.pos] || ATTR_PROFILE.CM;
+  return L.map((l, i) => [l, clamp(Math.round(p.rating + prof[i] + (hashS(p.id + '_' + i) - 0.5) * 10), 18, 97)]);
+}
 function playerModal(pid) {
   const found = findPlayer(G, pid) || (G.freeAgents.find(p => p.id === pid) ? { p: G.freeAgents.find(p => p.id === pid), t: null } : null)
     || (me().youth.find(p => p.id === pid) ? { p: me().youth.find(p => p.id === pid), t: me() } : null);
@@ -3812,27 +3924,37 @@ function playerModal(pid) {
   }
   const body = `
     <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px">
-      ${faceSVG(p, 72, t ? t.c1 : null)}
-      <div style="min-width:0">
+      ${faceSVG(p, 84, t ? t.c1 : null)}
+      <div style="min-width:0;flex:1">
         <h3 style="font-size:23px">${esc(p.name)}${isCaptain ? ' <span class="tag" style="color:var(--gold);border-color:var(--gold)">C</span>' : isVice ? ' <span class="tag">VC</span>' : ''}</h3>
-        <div style="color:var(--dim);font-size:13px">${flagSVG(p.nat)} ${natName(p.nat)} · ${p.age} years old${p.dob ? ' · born ' + esc(p.dob) : ''}${t ? ' · ' + crestHTML(t, 15) + ' ' + esc(t.n) : ' · free agent'}</div>
-        <div style="margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          ${ratingTag(p.rating)} ${posTag(p.pos)} <span class="hint">potential ${p.pot}</span> ${growthHtml(p)} ${potGrowthHtml(p)}
-          ${legend ? '<span class="tag" style="color:var(--gold);border-color:var(--gold)">Club legend</span>' : ''}
-          ${p.reserve ? '<span class="tag">reserve</span>' : ''}
-          ${p.wantsOut ? '<span class="tag out">wants a move</span>' : ''}${p.inj > 0 ? `<span class="tag inj">out ${p.inj} games</span>` : ''}
+        <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          ${posTag(p.pos)}<span>${flagSVG(p.nat)} ${natName(p.nat)}</span><span class="hint">Age ${p.age}${p.dob ? ', born ' + esc(p.dob) : ''}</span>
         </div>
+        <div style="margin-top:6px;font-size:13px">
+          ${t ? crestHTML(t, 18) + ' ' + esc(t.n) : '<span class="hint">Free agent</span>'}
+          ${legend ? ' <span class="tag" style="color:var(--gold);border-color:var(--gold)">Club legend</span>' : ''}
+          ${p.reserve ? ' <span class="tag">reserve</span>' : ''}
+          ${p.wantsOut ? ' <span class="tag out">wants a move</span>' : ''}${p.inj > 0 ? ` <span class="tag inj">out ${p.inj} games</span>` : ''}
+        </div>
+      </div>
+      <div style="text-align:center;flex:0 0 auto">
+        <div style="font-family:var(--head);font-size:44px;line-height:1">${Math.round(p.rating)}</div>
+        <div class="hint">rating</div>
+        <div class="hint">potential ${p.pot}</div>
       </div>
     </div>
     ${devLine ? `<p style="margin:0 0 6px;font-size:13px;color:var(--teal)">${devLine}</p>` : ''}
     ${loanLine ? `<p style="margin:0 0 10px;font-size:13px;color:var(--gold)">${loanLine}</p>` : ''}
-    <div class="attr">
-      <div><b>${money(p.value)}</b><small>market value</small></div>
-      <div><b>${money(p.wage)}</b><small>wage a season <span class="hint">(${money(p.wage / 12)}/mo)</span></small></div>
-      <div><b>${p.contract}y</b><small>contract left</small></div>
-      <div><b>${money(p.earned || 0)}</b><small>career earnings</small></div>
-      <div><b>${p.cApps}</b><small>career apps</small></div>
-      <div><b>${p.cG}/${p.cA}</b><small>career goals / assists</small></div>
+    <div class="cols">
+      <div class="panel"><h3>Attributes</h3><div class="pad"><div class="att">${playerAttrBars(p).map(([l, v]) => `<b>${l}</b><div class="bar${v >= 70 ? ' g' : ''}"><i style="width:${v}%"></i></div><span>${v}</span>`).join('')}</div></div></div>
+      <div class="panel"><h3>Contract and value</h3><dl class="kv" style="padding:11px 13px">
+        <dt>Market value</dt><dd>${money(p.value)}</dd>
+        <dt>Wage a season</dt><dd>${money(p.wage)} <span class="hint">(${money(p.wage / 12)}/mo)</span></dd>
+        <dt>Contract left</dt><dd>${p.contract}y</dd>
+        <dt>Career earnings</dt><dd>${money(p.earned || 0)}</dd>
+        <dt>Career apps</dt><dd>${p.cApps}</dd>
+        <dt>Career goals / assists</dt><dd>${p.cG}/${p.cA}</dd>
+      </dl></div>
     </div>
     <p style="margin:12px 0 4px;color:var(--faint);font-size:12.5px">This season: ${p.apps} apps, ${p.goals} goals, ${p.assists} assists${POS_GROUP[p.pos] === 'GK' ? `, ${p.cs} clean sheets` : ''}.</p>
     <p style="margin:2px 0 10px;font-size:13px">Clubs: ${clubs}</p>
@@ -3964,15 +4086,14 @@ function viewTransfers() {
     .filter(Boolean).filter(x => posOk(x.p) && searchOk(x.p) && ageOk(x.p)).sort((a, b) => sorter(a.p, b.p));
 
   const winOpen = inTransferWindow(G);
-  let html = `<div class="panel" style="border-color:${winOpen ? 'var(--up)' : 'var(--down)'}">
-    <div class="pad" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <b style="font-family:var(--head);font-size:18px;color:${winOpen ? 'var(--up)' : 'var(--down)'}">${winOpen ? currentWindowName(G) + ' is open' : 'Transfer window shut'}</b>
-      <span class="hint">${winOpen ? `Closes in ${windowCloses(G)} matchday${windowCloses(G) === 1 ? '' : 's'}.` : `Reopens in ${roundsToNextWindow(G)} matchday${roundsToNextWindow(G) === 1 ? '' : 's'}.`}</span>
-      ${!winOpen ? `<button class="btn ghost sm" id="skipWindow" style="margin-left:auto">Skip to next window</button>` : ''}
-    </div></div>
-  <div class="panel"><h3>Transfer budget<span class="sub">wages ${money(t.wageBill)} · squad ${t.squad.length}/32</span></h3>
-    <div class="pad"><div style="font-family:var(--head);font-size:34px;line-height:1">${money(t.budget)}</div>
-    <p class="hint" style="margin:4px 0 0">Prize money and sponsorship land at the end of the season. Sell or release to raise more now.</p></div></div>`;
+  const foreignN = t.squad.filter(p => p.nat !== 'ZA').length;
+  let html = `<div class="rbox">
+    <div><b>${money(t.budget)}</b><span>Transfer budget</span></div>
+    <div><b style="color:${winOpen ? 'var(--up)' : 'var(--down)'}">${winOpen ? windowCloses(G) + (windowCloses(G) === 1 ? ' matchday' : ' matchdays') : roundsToNextWindow(G) + (roundsToNextWindow(G) === 1 ? ' matchday' : ' matchdays')}</b><span>${winOpen ? currentWindowName(G) + ' left' : 'Until window opens'}</span></div>
+    <div><b>${t.squad.length} / 32</b><span>Squad size</span></div>
+    <div><b style="${foreignN < 1 || foreignN > MAX_FOREIGN ? 'color:var(--down)' : ''}">${foreignN} / ${MAX_FOREIGN}</b><span>Foreign players</span></div>
+  </div>
+  ${!winOpen ? `<div class="panel"><div class="pad" style="display:flex;justify-content:flex-end"><button class="btn ghost sm" id="skipWindow">Skip to next window</button></div></div>` : ''}`;
 
   const bids = G.pendingBids || [];
   if (bids.length) {
