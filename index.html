@@ -18,7 +18,7 @@
 <link rel="icon" id="favicon" href="">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Big+Shoulders+Display:wght@700;800;900&display=swap" rel="stylesheet">
 <!-- Google Sign-In: replace YOUR_GOOGLE_CLIENT_ID below with a real OAuth client ID from
      Google Cloud Console (with this page's own domain added as an authorized origin) once
      this file is hosted on your own site. accounts.google.com is not reachable from inside
@@ -27,15 +27,15 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
-  --bg:#0a0a0d; --bg2:#151316; --panel:#1c1a1d; --panel2:#241e21;
-  --line:#3a1e22; --line2:#6e2028;
-  --ink:#f5f1ee; --dim:#b7a9ac; --faint:#7d6d70;
-  --gold:#E4142B; --gold-d:#B80F22; --teal:#FF4757; --teal-d:#C21F2D;
-  --up:#3ECF6E; --down:#FF3B3B; --cup:#FFC542;
-  --pitch:#0f5c3f; --pitch2:#0d4f37;
-  --r:8px;
-  --head:'Saira Condensed',Impact,'Arial Narrow',sans-serif;
-  --body:'Public Sans','Segoe UI',system-ui,sans-serif;
+  --bg:#100418; --bg2:#0b0212; --panel:#1c0a28; --panel2:#2a0f3a;
+  --line:rgba(255,140,20,.4); --line2:rgba(255,140,20,.75);
+  --ink:#fff7ec; --dim:#cda9c9; --faint:#9b7797;
+  --gold:#fff200; --gold-d:#c25b00; --teal:#ff8a00; --teal-d:#c25b00;
+  --up:#39ff8c; --down:#ff2d6e; --cup:#29e0ff;
+  --pitch:#1c7a4c; --pitch2:#1a7046;
+  --r:6px;
+  --head:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif;
+  --body:'Barlow','Segoe UI',system-ui,sans-serif;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
@@ -58,7 +58,7 @@
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{margin:0;color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased; background:  radial-gradient(60% 50% at 12% -6%,rgba(255,242,0,.35),transparent 60%),  radial-gradient(55% 46% at 108% 6%,rgba(255,90,0,.3),transparent 62%),  radial-gradient(60% 55% at 100% 100%,rgba(255,20,120,.25),transparent 60%),  radial-gradient(50% 45% at -4% 96%,rgba(255,150,0,.25),transparent 60%),  linear-gradient(180deg,var(--bg2),var(--bg) 55%,var(--bg)); background-attachment:fixed}
 h1,h2,h3,h4{font-family:var(--head);font-weight:700;margin:0;line-height:1.05}
 button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
 button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
