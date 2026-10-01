@@ -23,7 +23,7 @@
 <meta name="twitter:title" content="Mzansi Manager 2026">
 <meta name="twitter:description" content="Manage a South African football club through five divisions. Free, browser-based, mobile and PC.">
 <meta name="twitter:image" content="https://mzansimanager.co.za/assets/mm-poster.jpg">
-<link rel="icon" id="favicon" type="image/png" href="assets/mm-favicon.png"> <link rel="apple-touch-icon" href="assets/mm-apple-touch.png">
+<link rel="icon" id="favicon" type="image/png" href="mm-logo.jpg"> <link rel="apple-touch-icon" href="mm-logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Big+Shoulders+Display:wght@700;800;900&display=swap" rel="stylesheet">
@@ -99,7 +99,8 @@ img{max-width:100%}
 .rbox b{display:block;font-family:var(--head);font-size:24px;line-height:1;color:var(--gold)}
 .rbox span{font-size:12px;color:var(--faint)}
 .crest.img{border:none;border-radius:50%;background-size:contain;background-repeat:no-repeat;background-position:center}
-.att{display:grid;grid-template-columns:34px 1fr 26px;gap:5px 8px;align-items:center;font-size:13px}
+  .att{display:grid;grid-template-columns:34px 1fr 42px;gap:5px 8px;align-items:center;font-size:13px}
+  .up{color:#3ddc84;font-style:normal;font-size:10px;margin-left:3px}
 .att b{color:var(--faint);font-weight:600}
 .bar.g>i{background:var(--up)}
 .avpick{display:flex;gap:8px;flex-wrap:wrap}
@@ -124,13 +125,13 @@ footer.legal{color:var(--faint);font-size:11.5px;text-align:center;padding:14px 
 /* ---------- chrome ---------- */
 #app{display:none}
 header.top{position:sticky;top:0;z-index:30;background:var(--bg2);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
-.topin{max-width:1200px;margin:0 auto;padding:9px 14px;display:flex;align-items:center;gap:12px}
+.topin{max-width:1200px;margin:0 auto;padding:9px 14px;display:flex;align-items:center;gap:12px} @media (max-width:760px){   .topin{flex-wrap:wrap;row-gap:6px}   .tmgr{min-width:0}   #mgrName{display:block;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}   .topstats{order:3;flex-basis:100%;margin-left:0}   .winwrap{order:4;flex-basis:100%;flex-direction:column;align-items:stretch;margin-left:0}   .winpill{margin-left:0;justify-content:center}   #contBtn{width:100%} }
 .myclub{display:flex;align-items:center;gap:10px;min-width:0}
 .myclub h2{font-size:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .myclub small{display:block;color:var(--faint);font-size:11px;font-family:var(--body)}
 .topstats{margin-left:auto;display:flex;gap:16px;text-align:right}
 .topstats b{display:block;font-family:var(--head);font-size:18px;line-height:1.1}
-.topstats small{color:var(--faint);font-size:10.5px} .applogo{width:34px;height:34px;flex:0 0 34px;display:block;border-radius:6px} .tmgr{display:flex;align-items:center;gap:8px;padding-left:12px;margin-left:4px;border-left:1px solid var(--line)} .tmgr small{display:block;color:var(--faint);font-size:11px} .tmgr b{font-family:var(--head);font-size:15px} .winpill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);font-size:12px;white-space:nowrap;margin-left:8px} .winpill.open{border-color:var(--up);color:var(--up)} .winpill.shut{color:var(--faint)} .shellbody{display:flex;align-items:flex-start;max-width:1300px;margin:0 auto} .side{flex:0 0 200px;background:var(--panel);border-right:1px solid var(--line);padding:10px 6px;display:flex;flex-direction:column;gap:1px} .side h4{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;font-family:var(--head);padding:12px 10px 3px;margin:0} .side h4:first-child{padding-top:4px} .navlink{display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;background:none;border:none;border-left:3px solid transparent;padding:8px 10px;border-radius:0 8px 8px 0;font-family:var(--head);font-size:15px;color:var(--dim);cursor:pointer} .navlink:hover{background:var(--panel2);color:var(--ink)} .navlink.on{background:var(--panel2);color:var(--teal);border-left-color:var(--teal);font-weight:700} .nb{background:var(--down);color:#fff;font-size:11px;font-weight:700;line-height:1;padding:2px 6px;border-radius:999px;flex:0 0 auto} .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px} .cal .h{font-size:11px;color:var(--faint);text-align:center;padding:3px;font-family:var(--head)} .cd{min-height:70px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 5px;font-size:11.5px;overflow:hidden} .cd.pad{background:transparent;border-color:transparent} .cd.win{background:rgba(57,255,140,.08);border-color:rgba(57,255,140,.4)} .cd.today{outline:2px solid var(--gold)} .cd .dn{font-weight:700;color:var(--faint);display:block;margin-bottom:2px} .cd .m{display:block;margin-top:2px;padding:2px 4px;border-radius:3px;background:var(--gold);color:#241c00;font-weight:600;line-height:1.25} .cd .m.away{background:var(--panel);color:var(--ink);border:1px solid var(--line)} .cd .m.cup{background:var(--cup);color:#00232b} .cd .m.caf{background:var(--up);color:#012310} @media (max-width:900px){   .shellbody{display:block}   .side{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--line);padding:6px 8px;gap:4px}   .side h4{display:none}   .navlink{border-left:0;border-radius:6px;padding:6px 10px;font-size:13.5px}   .navlink.on{border-left-color:transparent;background:var(--panel2);color:var(--teal)} } .ticker{overflow:hidden;background:var(--bg2);border-bottom:1px solid var(--line);font-size:13px;padding:6px 0;white-space:nowrap} .tk-track{display:inline-block;padding-left:100%;animation:tk 240s linear infinite} .ticker:hover .tk-track{animation-play-state:paused} @keyframes tk{to{transform:translateX(-100%)}} .tk-item{display:inline-block;padding-right:44px;color:var(--dim)} .tk-item b{color:var(--teal);font-family:var(--head);font-weight:700;margin-right:6px}
+.topstats small{color:var(--faint);font-size:10.5px} .applogo{width:34px;height:34px;flex:0 0 34px;display:block;border-radius:6px} .tmgr{display:flex;align-items:center;gap:8px;padding-left:12px;margin-left:4px;border-left:1px solid var(--line)} .tmgr small{display:block;color:var(--faint);font-size:11px} .tmgr b{font-family:var(--head);font-size:15px} .winpill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);font-size:12px;white-space:nowrap;margin-left:8px} .winwrap{display:flex;align-items:center;gap:8px} .winpill.open{border-color:var(--up);color:var(--up)} .winpill.shut{color:var(--faint)} .shellbody{display:flex;align-items:flex-start;max-width:1300px;margin:0 auto} .side{flex:0 0 200px;background:var(--panel);border-right:1px solid var(--line);padding:10px 6px;display:flex;flex-direction:column;gap:1px} .side h4{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;font-family:var(--head);padding:12px 10px 3px;margin:0} .side h4:first-child{padding-top:4px} .navlink{display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;background:none;border:none;border-left:3px solid transparent;padding:8px 10px;border-radius:0 8px 8px 0;font-family:var(--head);font-size:15px;color:var(--dim);cursor:pointer} .navlink:hover{background:var(--panel2);color:var(--ink)} .navlink.on{background:var(--panel2);color:var(--teal);border-left-color:var(--teal);font-weight:700} .nb{background:var(--down);color:#fff;font-size:11px;font-weight:700;line-height:1;padding:2px 6px;border-radius:999px;flex:0 0 auto} .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px} .cal .h{font-size:11px;color:var(--faint);text-align:center;padding:3px;font-family:var(--head)} .cd{min-height:70px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 5px;font-size:11.5px;overflow:hidden} .cd.pad{background:transparent;border-color:transparent} .cd.win{background:rgba(57,255,140,.08);border-color:rgba(57,255,140,.4)} .cd.today{outline:2px solid var(--gold)} .cd .m{display:flex;align-items:center;gap:4px;margin-top:2px;padding:2px 5px;border-radius:3px;background:#fff;color:#c81e2c;font-weight:700;line-height:1.25;border-left:3px solid var(--gold)} .cd .m .crest{flex:0 0 auto} .cd .m.away{border-left-color:var(--ink)} .cd .m.cup{border-left-color:var(--cup)} .cd .m.caf{border-left-color:var(--up)} @media (max-width:900px){   .shellbody{display:block}   .side{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--line);padding:6px 8px;gap:4px}   .side h4{display:none}   .navlink{border-left:0;border-radius:6px;padding:6px 10px;font-size:13.5px}   .navlink.on{border-left-color:transparent;background:var(--panel2);color:var(--teal)} } .ticker{overflow:hidden;background:var(--bg2);border-bottom:1px solid var(--line);font-size:13px;padding:6px 0;white-space:nowrap} .tk-track{display:inline-block;padding-left:100%;animation:tk 240s linear infinite} .ticker:hover .tk-track{animation-play-state:paused} @keyframes tk{to{transform:translateX(-100%)}} .tk-item{display:inline-block;padding-right:44px;color:var(--dim)} .tk-item b{color:var(--teal);font-family:var(--head);font-weight:700;margin-right:6px}
 nav.tabs{background:var(--bg2);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
 nav.tabs::-webkit-scrollbar{display:none}
 .tabsin{max-width:1200px;margin:0 auto;display:flex;gap:2px;padding:0 10px}
@@ -202,7 +203,32 @@ main{max-width:1200px;margin:0 auto;padding:16px 14px 118px}
 .pos{font-family:var(--head);font-size:15px;width:24px;color:var(--dim);text-align:center !important}
 tr.zone-up td:first-child{box-shadow:inset 3px 0 var(--up)}
 tr.zone-cup td:first-child{box-shadow:inset 3px 0 var(--cup)}
+tr.zone-cl td:first-child{box-shadow:inset 3px 0 var(--cup)}
+tr.zone-confed td:first-child{box-shadow:inset 3px 0 var(--gold)}
+tr.zone-playoff td:first-child{box-shadow:inset 3px 0 var(--gold)}
 tr.zone-down td:first-child{box-shadow:inset 3px 0 var(--down)}
+.tbl-google{background:#1f1f1f !important;border-color:#2c2c2e !important}
+.tbl-google > h3{background:#28282a !important;color:#e7e8ea !important;border-color:#2c2c2e !important}
+.gtable{width:100%;border-collapse:collapse;font-size:14px;background:#1f1f1f;color:#e7e8ea}
+.gtable th{font-family:var(--head);font-weight:600;font-size:12.5px;color:#9e9ea0;text-align:right;padding:10px 8px;border-bottom:1px solid #2c2c2e;background:#1f1f1f}
+.gtable th:nth-child(-n+2),.gtable td:nth-child(-n+2){text-align:left}
+.gtable td{padding:10px 8px;border-bottom:1px solid #2a2a2c;text-align:right;color:#c7c8ca;white-space:nowrap}
+.gtable td.pos{color:#9e9ea0;font-family:var(--head);font-size:14px}
+.gtable td b{color:#ffffff;font-weight:700}
+.gtable .team{display:flex;align-items:center;gap:9px;color:#ffffff;font-weight:500}
+.gtable tr.me{background:rgba(245,197,24,.1)}
+.gtable tr.me td{font-weight:600}
+.gtable td.muted{color:#7a7a7d}
+.gtable tr.zone-cl td:first-child{box-shadow:inset 4px 0 #4286f5}
+.gtable tr.zone-confed td:first-child{box-shadow:inset 4px 0 #fb7b18}
+.gtable tr.zone-playoff td:first-child{box-shadow:inset 4px 0 #fb7b18}
+.gtable tr.zone-up td:first-child{box-shadow:inset 4px 0 #34c471}
+.gtable tr.zone-down td:first-child{box-shadow:inset 4px 0 #ff5a5a}
+.gseasonbar{display:flex;gap:10px;align-items:center;padding:10px 13px;border-bottom:1px solid #2c2c2e;background:#1f1f1f;flex-wrap:wrap}
+.gseasonbar label{color:#9e9ea0;font-size:12.5px}
+.gseasonbar select{background:#2c2c2e;color:#e7e8ea;border:1px solid #3a3a3d;border-radius:6px;padding:6px 10px;font-family:inherit;font-size:14px}
+.glegend{display:flex;gap:14px;flex-wrap:wrap;padding:10px 13px;font-size:12px;color:#9e9ea0;border-top:1px solid #2c2c2e;background:#1f1f1f}
+.glegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
 .form{display:inline-flex;gap:2px}
 .form i{width:15px;height:15px;border-radius:3px;font-style:normal;font-size:10px;font-weight:700;display:grid;place-items:center;color:#0c110e;font-family:var(--head)}
 .form i.W{background:var(--up)}.form i.D{background:var(--faint)}.form i.L{background:var(--down)}
@@ -220,7 +246,7 @@ tr.zone-down td:first-child{box-shadow:inset 3px 0 var(--down)}
 .tag.gk{color:#ff7ac6;border-color:#ff7ac666}
 .tag.def{color:#6bb8ff;border-color:#6bb8ff66}
 .tag.mid{color:#4fd39a;border-color:#4fd39a66}
-.tag.att{color:#ff9c5b;border-color:#ff9c5b66}
+.tag.att{color:#ff9c5b;border-color:#ff9c5b66} .pen{color:#ff6b6b;font-style:normal;font-size:9px;font-weight:700;margin-left:2px}
 .tag.xi{color:var(--gold);border-color:var(--gold)}
 .tag.inj{color:var(--down);border-color:var(--down)}
 .tag.out{color:#ffb020;border-color:#ffb020}
@@ -495,9 +521,9 @@ header.top{box-shadow:0 2px 12px rgba(0,0,0,.35)}
           <small id="mySub">—</small>
         </div>
       </div>
-      <div class="tmgr">
+<div class="tmgr">
         <span id="mgrFace"></span>
-        <div><b id="mgrName">—</b><small>Manager</small></div>
+        <div style="min-width:0"><b id="mgrName">—</b><small>Manager</small></div>
       </div>
       <div class="topstats">
         <div class="hide-s"><b id="statDate">—</b><small id="statSeason">—</small></div>
@@ -506,8 +532,10 @@ header.top{box-shadow:0 2px 12px rgba(0,0,0,.35)}
         <div><b id="statSquad">—</b><small>squad</small></div>
         <div><b id="statBudget">—</b><small>transfer budget</small></div>
       </div>
-      <span class="winpill" id="winPill">—</span>
-      <button class="btn sm" id="contBtn">Continue</button>
+      <div class="winwrap">
+        <span class="winpill" id="winPill">—</span>
+        <button class="btn sm" id="contBtn">Continue</button>
+      </div>
     </div>
   </header>
   <div class="ticker" id="ticker"><div class="tk-track" id="tickerTrack"></div></div>
@@ -524,7 +552,7 @@ header.top{box-shadow:0 2px 12px rgba(0,0,0,.35)}
     <div class="view" id="v-squad"></div>
     <div class="view" id="v-tactics"></div>
     <div class="view" id="v-transfers"></div>
-    <div class="view" id="v-youth"></div>
+    <div class="view" id="v-youth"></div>     <div class="view" id="v-training"></div>
     <div class="view" id="v-stats"></div>
     <div class="view" id="v-news"></div>
     <div class="view" id="v-cups"></div>
@@ -727,11 +755,11 @@ const NAMES = {
 };
 
 /* ---------------- positions ---------------- */
-const POS_LIST = ['GK','RB','CB','LB','CDM','CM','RM','LM','ST','CF'];
-const POS_GROUP = { GK:'GK', RB:'DEF', CB:'DEF', LB:'DEF', CDM:'MID', CM:'MID', RM:'MID', LM:'MID', ST:'ATT', CF:'ATT' };
+const POS_LIST = ['GK','RB','CB','LB','RWB','LWB','CDM','CM','CAM','RM','LM','RW','LW','ST','CF'];
+const POS_GROUP = { GK:'GK', RB:'DEF', CB:'DEF', LB:'DEF', RWB:'DEF', LWB:'DEF', CDM:'MID', CM:'MID', CAM:'MID', RM:'MID', LM:'MID', RW:'ATT', LW:'ATT', ST:'ATT', CF:'ATT' };
 const GROUP_ORDER = ['GK','DEF','MID','ATT'];
-const POS_ATT = { GK:0.02, CB:0.35, RB:0.6, LB:0.6, CDM:0.55, CM:1.0, RM:1.25, LM:1.25, CF:1.8, ST:2.2 };
-const POS_DEF = { GK:2.0, CB:2.0, RB:1.5, LB:1.5, CDM:1.5, CM:0.9, RM:0.6, LM:0.6, CF:0.2, ST:0.1 };
+const POS_ATT = { GK:0.02, CB:0.35, RB:0.6, LB:0.6, RWB:0.8, LWB:0.8, CDM:0.55, CM:1.0, CAM:1.4, RM:1.25, LM:1.25, RW:1.6, LW:1.6, CF:1.8, ST:2.2 };
+const POS_DEF = { GK:2.0, CB:2.0, RB:1.5, LB:1.5, RWB:1.2, LWB:1.2, CDM:1.5, CM:0.9, CAM:0.5, RM:0.6, LM:0.6, RW:0.35, LW:0.35, CF:0.2, ST:0.1 };
 
 const FORMATIONS = {
   '4-4-2':   ['GK','RB','CB','CB','LB','RM','CM','CM','LM','ST','ST'],
@@ -739,7 +767,15 @@ const FORMATIONS = {
   '4-2-3-1': ['GK','RB','CB','CB','LB','CDM','CDM','RM','CF','LM','ST'],
   '4-1-2-1-2': ['GK','RB','CB','CB','LB','CDM','CM','CM','CF','ST','ST'],
   '3-5-2':   ['GK','CB','CB','CB','RM','CDM','CM','CM','LM','ST','ST'],
-  '5-3-2':   ['GK','RB','CB','CB','CB','LB','CDM','CM','CM','ST','ST']
+  '5-3-2':   ['GK','RB','CB','CB','CB','LB','CDM','CM','CM','ST','ST'],
+  '4-2-3-1 (CAM)': ['GK','RB','CB','CB','LB','CDM','CDM','RW','CAM','LW','ST'],
+  '4-3-3 (Wide)':  ['GK','RB','CB','CB','LB','CM','CDM','CM','RW','ST','LW'],
+  '4-3-1-2':       ['GK','RB','CB','CB','LB','CM','CDM','CM','CAM','ST','ST'],
+  '3-4-3':         ['GK','CB','CB','CB','RWB','CM','CM','LWB','RW','ST','LW'],
+  '3-4-1-2':       ['GK','CB','CB','CB','RWB','CM','CM','LWB','CAM','ST','ST'],
+  '3-5-2 (WB)':    ['GK','CB','CB','CB','RWB','CM','CDM','CM','LWB','ST','ST'],
+  '5-3-2 (WB)':    ['GK','RWB','CB','CB','CB','LWB','CM','CDM','CM','ST','ST'],
+  '5-4-1':         ['GK','RWB','CB','CB','CB','LWB','RM','CM','CM','LM','ST']
 };
 const FORM_COORDS = {
   '4-4-2':   [[50,7],[85,25],[63,20],[37,20],[15,25],[85,55],[62,48],[38,48],[15,55],[60,80],[40,80]],
@@ -747,7 +783,15 @@ const FORM_COORDS = {
   '4-2-3-1': [[50,7],[85,25],[63,20],[37,20],[15,25],[60,42],[40,42],[80,64],[50,66],[20,64],[50,86]],
   '4-1-2-1-2': [[50,7],[85,25],[63,20],[37,20],[15,25],[50,40],[72,54],[28,54],[50,68],[60,84],[40,84]],
   '3-5-2':   [[50,7],[68,20],[50,17],[32,20],[88,52],[50,38],[66,56],[34,56],[12,52],[60,82],[40,82]],
-  '5-3-2':   [[50,7],[88,28],[68,18],[50,16],[32,18],[12,28],[50,42],[66,56],[34,56],[60,82],[40,82]]
+  '5-3-2':   [[50,7],[88,28],[68,18],[50,16],[32,18],[12,28],[50,42],[66,56],[34,56],[60,82],[40,82]],
+  '4-2-3-1 (CAM)': [[50,7],[85,25],[63,20],[37,20],[15,25],[62,42],[38,42],[84,66],[50,64],[16,66],[50,86]],
+  '4-3-3 (Wide)':  [[50,7],[85,25],[63,20],[37,20],[15,25],[68,52],[50,40],[32,52],[84,74],[50,86],[16,74]],
+  '4-3-1-2':       [[50,7],[85,25],[63,20],[37,20],[15,25],[68,46],[50,38],[32,46],[50,66],[60,84],[40,84]],
+  '3-4-3':         [[50,7],[68,20],[50,17],[32,20],[88,42],[62,45],[38,45],[12,42],[82,76],[50,86],[18,76]],
+  '3-4-1-2':       [[50,7],[68,20],[50,17],[32,20],[88,42],[62,45],[38,45],[12,42],[50,64],[60,84],[40,84]],
+  '3-5-2 (WB)':    [[50,7],[68,20],[50,17],[32,20],[88,45],[64,52],[50,38],[36,52],[12,45],[60,82],[40,82]],
+  '5-3-2 (WB)':    [[50,7],[90,32],[68,18],[50,16],[32,18],[10,32],[64,52],[50,40],[36,52],[60,82],[40,82]],
+  '5-4-1':         [[50,7],[88,30],[68,18],[50,16],[32,18],[12,30],[85,55],[62,48],[38,48],[15,55],[50,82]]
 };
 
 /* ---------------- faces ---------------- */
@@ -780,7 +824,7 @@ function skinGroupFor(nat) {
 }
 const HAIRS = ['fade','afro','dreads','braids','bald','cornrows','curls','buzz','hightop','mohawk','lineup','locs'];
 const HAIR_COLOURS = ['#14100e','#1d1713','#241c16','#2f241b','#4a3320','#7a5326','#c9a227'];
-const MANAGER_AVATARS = ['blank','m1','m2','m3','m4','m5','m6'];
+const MANAGER_AVATARS = ['mgr-01','mgr-02','mgr-03','mgr-04','mgr-05','mgr-06','mgr-07','mgr-08','mgr-09','mgr-10','mgr-11','mgr-12','mgr-13','mgr-14','mgr-15','mgr-16','mgr-17','mgr-18','mgr-19','mgr-20','mgr-21','mgr-22','mgr-23','mgr-24','mgr-25','mgr-26','mgr-27','mgr-28'];
 
 /* ---------------- competition names ---------------- */
 const CUP_NAME   = 'Thatbank Cup';
@@ -1171,7 +1215,10 @@ function wageFor(rating, age, tier) {
   return Math.round(w * 100000) / 100000;
 }
 function valueOf(p) {
-  let v = 0.30 * Math.pow(1.165, p.rating - 55);
+  const r = p.rating;
+  let v = r < 75 ? 0.30 * Math.pow(1.165, r - 55)
+    : r < 80 ? 6.35 * Math.pow(1.718, r - 75)
+      : 95 * Math.pow(1.0826, r - 80);
   const a = p.age;
   let af = a <= 20 ? 1.25 + (p.pot - p.rating) * 0.035
     : a <= 23 ? 1.15 + (p.pot - p.rating) * 0.02
@@ -1192,7 +1239,7 @@ function makePlayer(opts) {
   const pot = Math.round(clamp(rating + potBump, rating, 95));
   const p = {
     id: PID++, first: nm.first, last: nm.last, name: nm.first + ' ' + nm.last,
-    nat, pos, age, rating, pot, face: makeFace(nat),
+    nat, pos, alt: o.alt || rollAlt(pos), age, rating, pot, face: makeFace(nat),
     wage: wageFor(rating, age, o.tier), contract: o.contract != null ? o.contract : rint(1, 4),
     goals: 0, assists: 0, apps: 0, cs: 0, inj: 0, form: 0, yellow: 0,
     cG: 0, cA: 0, cApps: 0, earned: 0,
@@ -1209,7 +1256,7 @@ function natFor(club, foreignSlot) {
   return pick(SCOUT_POOLS[club.scout] || SCOUT_POOLS.AFR);
 }
 
-const SQUAD_PLAN = ['GK','GK','GK','RB','RB','CB','CB','CB','CB','LB','LB','CDM','CDM','CM','CM','CM','RM','RM','LM','LM','ST','ST','CF','CF'];
+const SQUAD_PLAN = ['GK','GK','GK','RB','RB','CB','CB','CB','CB','LB','LB','RWB','LWB','CDM','CDM','CM','CM','CM','CAM','CAM','RM','LM','RW','LW','ST','ST','CF'];
 
 function makeSquad(club, season) {
   const foreigners = rint(1, 6);
@@ -1248,7 +1295,7 @@ function newGame(clubIndex, manager, seed) {
   });
   const G = {
     v: 2, season, teams, myTeam: clubIndex,
-    manager: manager || { name: 'Coach', avatar: 'blank' },
+    manager: manager || { name: 'Coach', avatar: 'mgr-01' },
     tables: [], fixtures: [], round: 0, cup: null,
     news: [], market: [], freeAgents: [], transferLog: [], pendingBids: [],
     records: { seasons: [] }, finished: false, liveMode: true, watchlist: []
@@ -1269,15 +1316,50 @@ function finNet(f) { return (f.prize + f.sponsor + f.gate + f.sales) - (f.buys +
 function wageOf(t) { return Math.round(t.squad.reduce((s, p) => s + p.wage, 0) * 100) / 100; } function reallocateBudget(G, amount) {   const t = G.teams[G.myTeam];   amount = Math.round(amount * 1000) / 1000;   if (amount === 0) return { ok: false, msg: 'Move the slider first.' };   if (amount > 0) {     if (amount > t.budget + 1e-9) return { ok: false, msg: `Only ${money(t.budget)} is available in the transfer budget.` };     t.budget = Math.round((t.budget - amount) * 100) / 100;     t.wageBudget = Math.round((t.wageBudget + amount) * 100) / 100;     return { ok: true, msg: `Moved ${money(amount)} from the transfer budget into the wage budget.` };   }   const move = -amount, spare = t.wageBudget - t.wageBill;   if (move > spare + 1e-9) return { ok: false, msg: `Only ${money(Math.max(0, spare))} of the wage budget is uncommitted.` };   t.wageBudget = Math.round((t.wageBudget - move) * 100) / 100;   t.budget = Math.round((t.budget + move) * 100) / 100;   return { ok: true, msg: `Moved ${money(move)} from the wage budget into the transfer budget.` }; }
 
 /* ---------------- lineups ---------------- */
-function posPenalty(natural, slot) {
-  if (natural === slot) return 0;
-  const a = POS_GROUP[natural], b = POS_GROUP[slot];
-  if (a === b) return 2.5;
-  if (a === 'GK' || b === 'GK') return 22;
-  const gi = GROUP_ORDER.indexOf(a), gj = GROUP_ORDER.indexOf(b);
-  return Math.abs(gi - gj) === 1 ? 7 : 13;
+/* Which extra positions a player of each main position can learn */
+const ALT_POS = {
+  CB:['LB','RB','CDM'], LB:['LWB','LM','CB'], RB:['RWB','RM','CB'],
+  LWB:['LB','LM'], RWB:['RB','RM'], CDM:['CM','CB'], CM:['CDM','CAM'],
+  CAM:['CM','CF','LW','RW'], LM:['LW','LWB'], RM:['RW','RWB'],
+  LW:['LM','RW'], RW:['RM','LW'], ST:['CF'], CF:['ST','CAM'], GK:[]
+};
+function rollAlt(pos) {
+  const o = ALT_POS[pos] || [];
+  if (!o.length || rnd() > 0.35) return [];          // 35% of players are versatile
+  const a = [pick(o)];
+  if (rnd() < 0.2) { const b = o.filter(x => x !== a[0]); if (b.length) a.push(pick(b)); }
+  return a;
 }
-function effRating(p, slot) { return clamp(p.rating - posPenalty(p.pos, slot) + p.form * 0.8, 20, 99); }
+/* Penalty between two positions (closer positions lose less) */
+const POS_NEAR = {
+  'LWB-LB':2,'RWB-RB':2,'LWB-LM':3,'RWB-RM':3,'LB-LM':4,'RB-RM':4,'LM-LW':2,'RM-RW':2,
+  'LW-ST':3,'RW-ST':3,'LW-CF':3,'RW-CF':3,'LW-RW':5,'LM-RM':5,'LB-RB':5,'LWB-RWB':5,
+  'CAM-CF':2,'CAM-CM':2,'CAM-ST':4,'CAM-LW':4,'CAM-RW':4,'CAM-CDM':5,'CM-CDM':2,
+  'CDM-CB':4,'ST-CF':2,'CB-LB':5,'CB-RB':5,'LWB-LW':5,'RWB-RW':5
+};
+function basePen(a, b) {
+  if (a === b) return 0;
+  const n = POS_NEAR[a + '-' + b] ?? POS_NEAR[b + '-' + a];
+  if (n != null) return n;
+  const ga = POS_GROUP[a], gb = POS_GROUP[b];
+  if (ga === 'GK' || gb === 'GK') return 22;
+  if (ga === gb) return 5;
+  return Math.abs(GROUP_ORDER.indexOf(ga) - GROUP_ORDER.indexOf(gb)) === 1 ? 8 : 14;
+}
+/* pl can be a player object (uses main + alternate positions) or a position string */
+function posPenalty(pl, slot) {
+  const nat = typeof pl === 'string' ? pl : pl.pos;
+  const alts = typeof pl === 'string' ? [] : (pl.alt || []);
+  if (nat === slot || alts.includes(slot)) return 0;
+  let best = basePen(nat, slot);
+  alts.forEach(a => { best = Math.min(best, basePen(a, slot) + 1); });
+  return best;
+}
+function penTag(p, slot) {
+  const n = Math.round(posPenalty(p, slot));
+  return n > 0 ? `<em class="pen">-${n}</em>` : '';
+}
+function effRating(p, slot) { return clamp(p.rating - posPenalty(p, slot) + p.form * 0.8, 20, 99); }
 
 function ensureLineup(t) {
   const slots = FORMATIONS[t.formation] || FORMATIONS['4-4-2'];
@@ -1313,7 +1395,7 @@ function benchOf(t) {
   const set = new Set(t.lineup || []);
   return t.squad.filter(p => !set.has(p.id) && p.inj <= 0);
 }
-function firstTeamOf(t) { return t.squad.filter(p => !p.reserve); }
+function firstTeamOf(t) { return t.squad.filter(p => !p.reserve); } const FIRST_TEAM_MAX = 32; function firstTeamFull(t) { return firstTeamOf(t).length >= FIRST_TEAM_MAX; }
 function reservesOf(t) { return t.squad.filter(p => p.reserve); }
 function moveToReserve(G, pid) {
   const t = me_(G);
@@ -1324,7 +1406,7 @@ function moveToReserve(G, pid) {
   if ((t.lineup || []).includes(pid)) t.lineup = autoLineup(t);
   return { ok: true, msg: `${p.name} moves to the reserves.` };
 }
-function moveToFirstTeam(G, pid) {
+function moveToFirstTeam(G, pid) {   if (firstTeamFull(me_(G))) return { ok: false, msg: `First team is full at ${FIRST_TEAM_MAX}. Move someone to the reserves first.` };
   const t = me_(G);
   const p = t.squad.find(x => x.id === pid);
   if (!p) return { ok: false, msg: 'Not in your squad.' };
@@ -1699,7 +1781,7 @@ function playRound(G, skipMine) {
     });
   }
   G.round++;
-  G.teams.forEach(t => { t.fin.wages += t.wageBill / totalRounds(G); });
+  G.teams.forEach(t => { t.fin.wages += t.wageBill / totalRounds(G); }); try { trainingTick(G); } catch (e) { console.error('Training error', e); }
   africaRound(G);
   if (CUP_AT.includes(G.round) && !G.cup.done) out.cup = playCupRound(G);
   if (S8_AT.includes(G.round)) out.s8 = playKnockoutRound(G, G.super8, S8_ROUNDS, 6);
@@ -1876,7 +1958,7 @@ function endSeason(G) {
 }
 
 function fillSquad(G, t) {
-  const need = { GK:3, RB:2, CB:4, LB:2, CDM:2, CM:3, RM:2, LM:2, ST:2, CF:2 };
+  const need = { GK:3, RB:2, CB:4, LB:2, RWB:1, LWB:1, CDM:2, CM:3, CAM:2, RM:1, LM:1, RW:1, LW:1, ST:2, CF:1 };;
   const foreign = t.squad.filter(p => p.nat !== 'ZA').length;
   Object.entries(need).forEach(([pos, min]) => {
     let have = t.squad.filter(p => p.pos === pos).length;
@@ -1948,8 +2030,7 @@ function promoteYouth(G, pid) {
   const t = G.teams[G.myTeam];
   const i = t.youth.findIndex(p => p.id === pid);
   if (i < 0) return { ok: false, msg: 'Not in the academy.' };
-  if (t.squad.length >= 32) return { ok: false, msg: 'Senior squad is full at 32.' };
-  const p = t.youth.splice(i, 1)[0];
+const p = t.youth.splice(i, 1)[0]; p.reserve = firstTeamFull(t);
   p.clubs.push({ id: t.id, from: G.season });
   t.squad.push(p);
   t.wageBill = wageOf(t);
@@ -1998,7 +2079,7 @@ function findPlayer(G, pid) {
   for (const t of G.teams) { const p = t.squad.find(x => x.id === pid); if (p) return { p, t }; }
   return null;
 }
-function minAtPos(pos) { return { GK:2, RB:1, CB:3, LB:1, CDM:1, CM:2, RM:1, LM:1, ST:1, CF:1 }[pos] || 1; }
+function minAtPos(pos) { return { GK:2, RB:1, CB:3, LB:1, RWB:0, LWB:0, CDM:1, CM:2, CAM:1, RM:0, LM:0, RW:0, LW:0, ST:1, CF:1 }[pos] ?? 1; }
 
 /* ---------------- found a custom club ---------------- */
 function foundClub(G, opts) {
@@ -2083,14 +2164,13 @@ function triggerReleaseClause(G, pid) {
   return buyPlayer(G, pid, f.p.releaseClause, true);
 }
 
-function buyPlayer(G, pid, fee, viaClause) {
+function buyPlayer(G, pid, fee, viaClause, terms) {
   const me = G.teams[G.myTeam], f = findPlayer(G, pid);
   if (!f) return { ok: false, msg: 'He has already moved on.' };
   if (f.t.id === me.id) return { ok: false, msg: 'He already plays for you.' };
   if (!viaClause && !inTransferWindow(G)) return { ok: false, msg: `The transfer window is shut. It reopens in ${roundsToNextWindow(G)} matchday${roundsToNextWindow(G) === 1 ? '' : 's'}.` };
   if (me.budget < fee) return { ok: false, msg: 'Not enough in the transfer budget.' };
-  if (me.wageBill + f.p.wage > me.wageBudget) return { ok: false, msg: `Wage budget won't stretch to ${f.p.name} — ${money(me.wageBill)} of ${money(me.wageBudget)} is already committed. Move funds from the transfer budget in Club & Manager, or free up wages first.` };
-  if (me.squad.length >= 32) return { ok: false, msg: 'Squad is full at 32. Sell or release first.' };
+  if (me.wageBill + (terms ? terms.wage : f.p.wage) > me.wageBudget) return { ok: false, msg: `Wage budget won't stretch to ${f.p.name} — ${money(me.wageBill)} of ${money(me.wageBudget)} is already committed. Move funds from the transfer budget in Club & Manager, or free up wages first.` };
   if (f.p.nat !== 'ZA' && me.squad.filter(p => p.nat !== 'ZA').length >= MAX_FOREIGN)
     return { ok: false, msg: `You already have ${MAX_FOREIGN} foreign players. Sell or release one before signing another.` };
   if (!viaClause) {
@@ -2103,9 +2183,9 @@ function buyPlayer(G, pid, fee, viaClause) {
   }
   f.t.squad = f.t.squad.filter(p => p.id !== pid);
   f.t.budget += fee; f.t.fin.sales += fee;
-  f.p.contract = rint(2, 4); f.p.fee = fee; f.p.joinedSeason = G.season; f.p.wantsOut = false;
+f.p.contract = terms ? terms.years : rint(2, 4); if (terms) f.p.wage = terms.wage; f.p.fee = fee; f.p.joinedSeason = G.season; f.p.wantsOut = false;
   f.p.clubs.push({ id: me.id, from: G.season });
-  me.squad.push(f.p);
+   f.p.reserve = firstTeamFull(me); me.squad.push(f.p);
   me.budget = Math.round((me.budget - fee) * 100) / 100;
   me.fin.buys += fee;
   me.wageBill = wageOf(me); f.t.wageBill = wageOf(f.t);
@@ -2113,7 +2193,7 @@ function buyPlayer(G, pid, fee, viaClause) {
   ensureLineup(me);
   logTransfer(G, f.p, f.t.id, me.id, fee);
   news(G, 'transfer', `${f.p.name} signs for ${me.s} from ${f.t.s} for ${money(fee)}.`, { pid: f.p.id, fromId: f.t.id, toId: me.id });
-  return { ok: true, msg: `${f.p.name} signs for ${me.s}.` };
+   return { ok: true, msg: `${f.p.name} signs for ${me.s}.${f.p.reserve ? ' Your first team is full, so he starts in the reserves.' : ''}` };
 }
 
 function sellPlayer(G, pid, fee, buyerId) {
@@ -2123,8 +2203,7 @@ function sellPlayer(G, pid, fee, buyerId) {
   if (!inTransferWindow(G)) return { ok: false, msg: `The transfer window is shut. It reopens in ${roundsToNextWindow(G)} matchday${roundsToNextWindow(G) === 1 ? '' : 's'}.` };
   if (me.captainId === pid) me.captainId = null;
   if (me.viceCaptainId === pid) me.viceCaptainId = null;
-  if (me.squad.filter(x => x.pos === p.pos).length <= minAtPos(p.pos))
-    return { ok: false, msg: `You'd have no cover at ${p.pos}. Sign a replacement first.` };
+  // no cover check: if you leave a position empty, you pay for it on the pitch
   const buyer = G.teams[buyerId != null ? buyerId : pickBuyer(G, p)];
   me.squad = me.squad.filter(x => x.id !== pid);
   me.budget = Math.round((me.budget + fee) * 100) / 100;
@@ -2190,8 +2269,6 @@ function releasePlayer(G, pid) {
   if (!p) return { ok: false, msg: 'Not in your squad.' };
   if (me.captainId === pid) me.captainId = null;
   if (me.viceCaptainId === pid) me.viceCaptainId = null;
-  if (me.squad.filter(x => x.pos === p.pos).length <= minAtPos(p.pos))
-    return { ok: false, msg: `You'd have no cover at ${p.pos}.` };
   const payoff = Math.round(p.wage * Math.max(0, p.contract) * 0.5 * 100) / 100;
   me.squad = me.squad.filter(x => x.id !== pid);
   me.budget = Math.round((me.budget - payoff) * 100) / 100;
@@ -2209,19 +2286,18 @@ function signFreeAgent(G, pid) {
   const i = G.freeAgents.findIndex(p => p.id === pid);
   if (i < 0) return { ok: false, msg: 'He signed elsewhere.' };
   if (!inTransferWindow(G)) return { ok: false, msg: `The transfer window is shut. It reopens in ${roundsToNextWindow(G)} matchday${roundsToNextWindow(G) === 1 ? '' : 's'}.` };
-  if (me.squad.length >= 32) return { ok: false, msg: 'Squad is full at 32.' };
   const cand = G.freeAgents[i];
   if (cand.nat !== 'ZA' && me.squad.filter(p => p.nat !== 'ZA').length >= MAX_FOREIGN)
     return { ok: false, msg: `You already have ${MAX_FOREIGN} foreign players. Sell or release one before signing another.` };
   if (me.wageBill + cand.wage > me.wageBudget) return { ok: false, msg: `Wage budget won't stretch to ${cand.name} — ${money(me.wageBill)} of ${money(me.wageBudget)} is already committed.` };
   const p = G.freeAgents.splice(i, 1)[0];
-  p.contract = rint(1, 3); p.wantsOut = false;
+  p.contract = rint(1, 3); p.wantsOut = false; p.reserve = firstTeamFull(me);
   p.clubs.push({ id: me.id, from: G.season });
   me.squad.push(p);
   me.wageBill = wageOf(me);
   ensureLineup(me);
   news(G, 'transfer', `${me.s} sign free agent ${p.name}.`, { pid: p.id, toId: me.id });
-  return { ok: true, msg: `${p.name} joins on a free transfer.` };
+  return { ok: true, msg: `${p.name} joins on a free transfer.${p.reserve ? ' First team is full, so he starts in the reserves.' : ''}` };
 }
 
 function aiTransferTick(G) {
@@ -2689,8 +2765,6 @@ function loanOut(G, pid, seasons) {
   if (!p) return { ok: false, msg: 'Not in your squad.' };
   if (!inTransferWindow(G)) return { ok: false, msg: `The transfer window is shut. It reopens in ${roundsToNextWindow(G)} matchday${roundsToNextWindow(G) === 1 ? '' : 's'}.` };
   if (me.captainId === pid || me.viceCaptainId === pid) return { ok: false, msg: `${p.name} is captain or vice-captain — can't be loaned out.` };
-  if (me.squad.filter(x => x.pos === p.pos).length <= minAtPos(p.pos))
-    return { ok: false, msg: `You'd have no cover at ${p.pos}.` };
   const dest = G.teams.filter(t => t.id !== me.id && Math.abs(clubLevel(t) - p.rating) < 14);
   const club = dest.length ? pick(dest) : pick(G.teams.filter(t => t.id !== me.id));
   p.loan = { from: me.id, seasons: seasons || 1, wageShare: 0.5 };
@@ -2905,26 +2979,9 @@ function faceSVG(p, size, kit) {
 }
 
 /* ---------------- manager avatars ---------------- */
-const MGR_FACES = {
-  m1: { sk:'#573320', hr:'fade', hc:'#1d1713', bd:1, ey:1, nose:1 },
-  m2: { sk:'#6a4028', hr:'bald', hc:'#14100e', bd:2, ey:0, nose:2 },
-  m3: { sk:'#4a2c17', hr:'locs', hc:'#14100e', bd:0, ey:2, nose:1 },
-  m4: { sk:'#96683f', hr:'buzz', hc:'#2f241b', bd:3, ey:1, nose:0 },
-  m5: { sk:'#d3a37a', hr:'lineup', hc:'#4a3320', bd:0, ey:1, nose:1 },
-  m6: { sk:'#7d4f30', hr:'afro', hc:'#1d1713', bd:1, ey:1, nose:2 }
-};
 function avatarSVG(id, size) {
   const s = size || 46;
-  if (!id || id === 'blank') {
-    const u = ++FACE_UID;
-    return `<svg class="face" width="${s}" height="${s}" viewBox="0 0 40 40" aria-hidden="true">
-      <defs><linearGradient id="bl${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--line2)"/><stop offset="1" stop-color="var(--line)"/></linearGradient></defs>
-      <circle cx="20" cy="20" r="20" fill="var(--panel2)"/>
-      <circle cx="20" cy="15.6" r="7.2" fill="url(#bl${u})"/>
-      <path d="M6 40c1.6-7.4 6.8-11 14-11s12.4 3.6 14 11z" fill="url(#bl${u})"/>
-      <circle cx="20" cy="20" r="19.4" fill="none" stroke="rgba(0,0,0,.25)" stroke-width="1.2"/></svg>`;
-  }
-  return faceSVG({ face: MGR_FACES[id] }, s, '#2b3a33');
+  return `<img class="face" src="managers/${id}.jpg" width="${s}" height="${s}" style="object-fit:cover" alt="">`;
 }
 
 function crestHTML(t, size) {
@@ -3074,8 +3131,8 @@ const SLOT_COUNT = 5;
 const LAST_SLOT_KEY = 'mzansi_manager_2026_last';
 let slot = 1; let leavingApp = false;
 let G = null, tab = 'match';
-let pickTier = 2, pickClub = null, pickAvatar = 'blank';
-let squadSort = 'rating', txFilter = 'ALL', txSearch = '', tableTier = 0, fxRound = 0, statTier = 0, newsFilter = 'ALL';
+let pickTier = 2, pickClub = null, pickAvatar = 'mgr-01';
+let squadSort = 'rating', txFilter = 'ALL', txSearch = '', tableTier = 0, tableSeason = 'current', fxRound = 0, statTier = 0, newsFilter = 'ALL';
 let selSpot = null;
 let navStack = ['match'], navIdx = 0, navSkip = false;
 
@@ -3249,14 +3306,14 @@ function handleGoogleSignIn(resp) {
   } catch (e) { }
 }
 window.handleGoogleSignIn = handleGoogleSignIn;
-$('#favicon').href = IMG_FAVICON;
+$('#favicon').href = 'mm-logo.jpg';
 
 function buildAvatars() {
   const w = $('#avPick'); w.innerHTML = '';
   MANAGER_AVATARS.forEach(id => {
     const b = el('button', 'avbtn', avatarSVG(id, 48));
     b.setAttribute('aria-pressed', pickAvatar === id);
-    b.title = id === 'blank' ? 'No face' : 'Avatar';
+    b.title = 'Avatar';
     b.onclick = () => { pickAvatar = id; buildAvatars(); };
     w.appendChild(b);
   });
@@ -3367,7 +3424,7 @@ function load(n) {
     const raw = localStorage.getItem(slotKey(n || slot)); if (!raw) return false;
     const d = JSON.parse(raw); if (!d.G || !d.G.teams) return false;
     G = d.G; SEED = d.seed; PID = d.pid; slot = n || slot;
-    G.teams.forEach(t => { t.fin = t.fin || newFin(); t.youth = t.youth || []; ensureLineup(t); });     G.watchlist = G.watchlist || []; G.pendingBids = G.pendingBids || [];
+    G.teams.forEach(t => { t.fin = t.fin || newFin(); t.youth = t.youth || []; t.squad.forEach(p => { p.value = valueOf(p); }); ensureLineup(t); });     G.watchlist = G.watchlist || []; G.pendingBids = G.pendingBids || [];
     if (!G.africa) { initAfrica(G); initAfcon(G); buildCAF(G); }
     if (!G.super8) buildExtraCups(G);     if (!G.watchlist) G.watchlist = [];
     G.manager.rep = G.manager.rep || 40;
@@ -3417,7 +3474,7 @@ function buildSlots() {
 /* ---------------- tabs ---------------- */
 const MENU_SECTIONS = [
   ['Career', [['match','Matchday'],['calendar','Calendar'],['table','Log'],['fixtures','Fixtures']]],
-  ['Squad', [['squad','Squad'],['tactics','Tactics'],['youth','Academy'],['transfers','Transfers'],['otherclubs','Other Clubs'],['watchlist','Shortlist']]],
+  ['Squad', [['squad','Squad'],['tactics','Tactics'], ['youth','Academy'],['training','Training'],['transfers','Transfers'],['otherclubs','Other Clubs'],['watchlist','Shortlist']]],
   ['Competitions', [['cups','Cups'],['africa','Africa'],['nations','Nations'],['stats','Stats']]],
   ['Club', [['club','Club'],['finances','Finances'],['trophies','Trophy room'],['manager','Manager'],['news','News'],['createclub','Create a club']]],
   ['More', [['careerfile','Save & Load'],['soundsettings','Music & sound effects'],['info','How to play']]]
@@ -3475,7 +3532,7 @@ function render() {   $('#mgrFace').innerHTML = avatarSVG(G.manager.avatar, 30);
   const active = $('#v-' + tab);
   if (active) active.classList.add('on');
   const dispatch = { match: viewMatch, table: viewTable, fixtures: viewFixtures, squad: viewSquad, tactics: viewTactics, finances: viewFinances, trophies: viewTrophies,
-     transfers: viewTransfers, youth: viewYouth, stats: viewStats, news: viewNews,
+     transfers: viewTransfers, youth: viewYouth, training: viewTraining, stats: viewStats, news: viewNews,
       cups: viewCups, africa: viewAfrica, nations: viewNations, calendar: viewCalendar, watchlist: viewWatchlist,
      info: viewInfo, createclub: viewCreateClub, manager: viewManager, otherclubs: viewOtherClubs, club: viewClub };
   try {
@@ -3565,10 +3622,16 @@ function simRounds(n) {
   if (played.length === 1) showMatchdayModal(played[0]); else showRunModal(played);
 }
 function afterRound() {
+  const tl = G.trainTally;
+  if (tl && tl.n > 0) {
+    const wk = tl.weeks > 1 ? ` over ${tl.weeks} weeks` : '';
+    toastGood(`Training: ${tl.n} improvement${tl.n === 1 ? '' : 's'}${wk}` + (tl.up ? ` · ${tl.up} player${tl.up === 1 ? '' : 's'} gained +1 overall` : ''));
+  }
+  G.trainTally = null;
   const bids = generateBids(G);
   G.pendingBids = (G.pendingBids || []).concat(bids).slice(-6);
   fxRound = Math.max(0, G.round - 1);
-  if (!G.finished && rnd() < 0.05) {
+  if (!G.finished && G.round >= 12 && rnd() < 0.05) {
     const offers = jobOffers(G);
     if (offers.length) G.pendingJobOffers = offers;
   }
@@ -4072,10 +4135,25 @@ function endLive() {
    ============================================================ */
 
 function zoneClass(i, tier) {
-  if (tier === 0) { if (i === 0) return 'zone-up'; if (i <= 2) return 'zone-cup'; if (i >= TIER_SIZE - PROMOTED) return 'zone-down'; }
-  else if (tier === 1) { if (i < PROMOTED) return 'zone-up'; if (i >= TIER_SIZE - PROMOTED) return 'zone-down'; }
-  else if (i < PROMOTED) return 'zone-up';
+  if (tier === 0) {
+    if (i <= 1) return 'zone-cl';
+    if (i <= 4) return 'zone-confed';
+    if (i >= TIER_SIZE - PROMOTED) return 'zone-down';
+  } else if (tier < TIER_NAMES.length - 1) {
+    if (i < PROMOTED) return 'zone-up';
+    if (i < PROMOTED + 4) return 'zone-playoff';
+    if (i >= TIER_SIZE - PROMOTED) return 'zone-down';
+  } else if (i < PROMOTED) return 'zone-up';
   return '';
+}
+function historicalTable(G, season, tier) {
+  const rows = [];
+  G.teams.forEach(t => {
+    const h = t.history.find(x => x.season === season && x.tier === tier);
+    if (h) rows.push({ id: t.id, w: h.w, d: h.d, l: h.l, gf: h.gf, ga: h.ga, pts: h.pts, pos: h.pos });
+  });
+  rows.sort((a, b) => a.pos - b.pos);
+  return rows;
 }
 function resRow(m) {
   const H = G.teams[m.h], A = G.teams[m.a];
@@ -4199,28 +4277,42 @@ function miniTable(rows, tier) {
 
 /* ---------------- League Table ---------------- */
 function viewTable() {
-  const v = $('#v-table'), st = sortTable(G, tableTier);
-  v.innerHTML = `<div class="panel">
-    <div class="chipbar" style="overflow-x:auto;flex-wrap:nowrap">${[0,1,2,3,4].map(i => `<button class="chip" data-tt="${i}" aria-pressed="${tableTier === i}">${TIER_SHORT[i]}</button>`).join('')}</div>
-    <table class="tbl"><thead><tr><th class="pos">#</th><th>Club</th><th>Ovr</th><th>P</th><th>W</th><th>D</th><th>L</th>
-      <th class="hide-s">GF</th><th class="hide-s">GA</th><th>GD</th><th>Pts</th><th class="hide-s">Form</th></tr></thead><tbody>` +
-    st.map((r, i) => {
+  const v = $('#v-table');
+  const seasons = G.records.seasons.map(s => s.season).sort((a, b) => b - a);
+  const isCurrent = tableSeason === 'current';
+  const st = isCurrent ? sortTable(G, tableTier) : historicalTable(G, +tableSeason, tableTier);
+  const champId = !isCurrent && st[0] ? st[0].id : null;
+  v.innerHTML = `<div class="panel tbl-google">
+    <div class="chipbar" style="overflow-x:auto;flex-wrap:nowrap;background:#1f1f1f;border-color:#2c2c2e">${[0,1,2,3,4].map(i => `<button class="chip" data-tt="${i}" aria-pressed="${tableTier === i}">${TIER_SHORT[i]}</button>`).join('')}</div>
+    <div class="gseasonbar">
+      <label for="gseason">Season</label>
+      <select id="gseason">
+        <option value="current" ${isCurrent ? 'selected' : ''}>${seasonLabel(G.season)} (in progress)</option>
+        ${seasons.map(s => `<option value="${s}" ${String(s) === String(tableSeason) ? 'selected' : ''}>${seasonLabel(s)} final</option>`).join('')}
+      </select>
+      ${champId != null ? `<span class="hint" style="color:#9e9ea0">Champions: <b style="color:#f5c518">${esc(G.teams[champId].n)}</b></span>` : ''}
+    </div>
+    <table class="gtable"><thead><tr><th class="pos">#</th><th>Club</th>${isCurrent ? '<th>Ovr</th>' : ''}<th>P</th><th>W</th><th>D</th><th>L</th>
+      <th class="hide-s">GF</th><th class="hide-s">GA</th><th>GD</th><th>Pts</th>${isCurrent ? '<th class="hide-s">Form</th>' : ''}</tr></thead><tbody>` +
+    (st.length ? st.map((r, i) => {
       const t = G.teams[r.id];
+      const p = isCurrent ? r.p : (r.w + r.d + r.l);
       return `<tr class="${r.id === G.myTeam ? 'me' : ''} ${zoneClass(i, tableTier)}">
-        <td class="pos num">${i + 1}</td>
-        <td><span class="team">${crestHTML(t, 15)}<span>${esc(t.s)}</span></span></td>
-        <td class="num" style="color:var(--dim)">${teamOverall(t)}</td>
-        <td class="num">${r.p}</td><td class="num">${r.w}</td><td class="num">${r.d}</td><td class="num">${r.l}</td>
-        <td class="num hide-s">${r.gf}</td><td class="num hide-s">${r.ga}</td>
-        <td class="num">${r.gf - r.ga > 0 ? '+' : ''}${r.gf - r.ga}</td><td class="num"><b>${r.pts}</b></td>
-        <td class="hide-s">${formHtml(t.form)}</td></tr>`;
-    }).join('') + `</tbody></table>
-    <div class="legend">${tableTier === 0
-      ? '<span><i style="background:var(--up)"></i>Champions</span><span><i style="background:var(--cup)"></i>CAF places</span><span><i style="background:var(--down)"></i>Relegated</span>'
-      : tableTier === 1
-        ? '<span><i style="background:var(--up)"></i>Promoted</span><span><i style="background:var(--down)"></i>Relegated to the Motsepe League</span>'
-        : `<span><i style="background:var(--up)"></i>Promoted to the ${TIER_SHORT[tableTier - 1]}</span>`}</div></div>`;
+        <td class="pos">${i + 1}</td>
+        <td><span class="team">${crestHTML(t, 20)}<span>${esc(t.s)}</span></span></td>
+        ${isCurrent ? `<td class="muted">${teamOverall(t)}</td>` : ''}
+        <td>${p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td>
+        <td class="hide-s muted">${r.gf}</td><td class="hide-s muted">${r.ga}</td>
+        <td>${r.gf - r.ga > 0 ? '+' : ''}${r.gf - r.ga}</td><td><b>${r.pts}</b></td>
+        ${isCurrent ? `<td class="hide-s">${formHtml(t.form)}</td>` : ''}</tr>`;
+    }).join('') : `<tr><td colspan="11" style="text-align:center;padding:20px;color:#7a7a7d">No completed table for this season yet.</td></tr>`) + `</tbody></table>
+    <div class="glegend">${tableTier === 0
+      ? '<span><i style="background:#4286f5"></i>Champions League</span><span><i style="background:#fb7b18"></i>Confederation Cup</span><span><i style="background:#ff5a5a"></i>Relegated</span>'
+      : tableTier === TIER_NAMES.length - 1
+        ? '<span><i style="background:#34c471"></i>Promoted</span>'
+        : `<span><i style="background:#34c471"></i>Promoted</span><span><i style="background:#fb7b18"></i>Promotion playoff</span><span><i style="background:#ff5a5a"></i>Relegated</span>`}</div></div>`;
   v.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { tableTier = +b.dataset.tt; viewTable(); });
+  const sel = $('#gseason'); if (sel) sel.onchange = e => { tableSeason = e.target.value; viewTable(); };
 }
 
 /* ---------------- fixtures ---------------- */
@@ -4269,9 +4361,9 @@ function playerRow(p, t, extra) {
 function bindPlayerRows(root) {
   root.querySelectorAll('[data-pid]').forEach(b => b.onclick = () => playerModal(+b.dataset.pid));
 }
-function squadPitchHTML(t) {   ensureLineup(t);   const slots = FORMATIONS[t.formation] || FORMATIONS['4-4-2'], coords = FORM_COORDS[t.formation] || FORM_COORDS['4-4-2'];   const xi = lineupOf(t), bench = benchOf(t).sort((a, b) => b.rating - a.rating).slice(0, 12);   const gk = { c1: '#7ddc1f', c2: '#1a1a1a' };   const men = xi.map((p, i) => {     const [x, y] = coords[i], bad = posPenalty(p.pos, slots[i]) > 3;     return `<button class="fpl" data-pid="${p.id}" style="left:${8 + x * 0.84}%;top:${8 + (100 - y) * 0.84}%">       ${kitSVG(slots[i] === 'GK' ? gk : t, false, 40)}       <span class="fn"><b>${p.rating}</b><span>${esc(p.last || p.name)}${bad ? ' !' : ''}${t.captainId === p.id ? ' (C)' : ''}</span></span></button>`;   }).join('');   return `<div class="panel"><h3>Starting XI<span class="sub">${t.formation} · rated ${teamOverall(t)}</span></h3>     <div class="pad"><div class="fifa"><i class="hl"></i><i class="cc"></i><i class="bx1"></i><i class="bx2"></i>${men}</div>     <div style="text-align:center;margin-top:8px"><button class="btn ghost sm" id="pitchToTactics">Change formation / swap players</button></div></div></div>   <div class="panel"><h3>Substitutes<span class="sub">tap a player for his profile</span></h3>     <div class="fsubs">${bench.map(p => `<button class="fsub" data-pid="${p.id}">${faceSVG(p, 40, t.c1)}<b>${p.rating}</b><small>${p.pos} · ${esc(p.last || p.name)}</small></button>`).join('')}</div></div>`; } function viewSquad() {
+function squadPitchHTML(t) {   ensureLineup(t);   const slots = FORMATIONS[t.formation] || FORMATIONS['4-4-2'], coords = FORM_COORDS[t.formation] || FORM_COORDS['4-4-2'];   const xi = lineupOf(t), bench = benchOf(t).sort((a, b) => b.rating - a.rating).slice(0, 12);   const gk = { c1: '#7ddc1f', c2: '#1a1a1a' };   const men = xi.map((p, i) => {     const [x, y] = coords[i], bad = posPenalty(p.pos, slots[i]) > 3;     return `<button class="fpl" data-pid="${p.id}" style="left:${8 + x * 0.84}%;top:${8 + (100 - y) * 0.84}%">       ${kitSVG(slots[i] === 'GK' ? gk : t, false, 40)}      <span class="fn"><b>${p.rating}${penTag(p, slots[i])}</b><span>${esc(p.last || p.name)}${bad ? ' !' : ''}${t.captainId === p.id ? ' (C)' : ''}</span></span></button>`;   }).join('');   return `<div class="panel"><h3>Starting XI<span class="sub">${t.formation} · rated ${teamOverall(t)}</span></h3>     <div class="pad"><div class="fifa"><i class="hl"></i><i class="cc"></i><i class="bx1"></i><i class="bx2"></i>${men}</div>     <div style="text-align:center;margin-top:8px"><button class="btn ghost sm" id="pitchToTactics">Change formation / swap players</button></div></div></div>   <div class="panel"><h3>Substitutes<span class="sub">tap a player for his profile</span></h3>     <div class="fsubs">${bench.map(p => `<button class="fsub" data-pid="${p.id}">${faceSVG(p, 40, t.c1)}<b>${p.rating}</b><small>${p.pos} · ${esc(p.last || p.name)}</small></button>`).join('')}</div></div>`; } function viewSquad() {
   const v = $('#v-squad'), t = me();
-  const order = { GK:0, RB:1, CB:2, LB:3, CDM:4, CM:5, RM:6, LM:7, ST:8, CF:9 };
+  const order = { GK:0, RB:1, CB:2, LB:3, RWB:4, LWB:5, CDM:6, CM:7, CAM:8, RM:9, LM:10, RW:11, LW:12, ST:13, CF:14 };
   const sorter = (a, b) => {
     if (squadSort === 'pos') return order[a.pos] - order[b.pos] || b.rating - a.rating;
     if (squadSort === 'age') return a.age - b.age || b.rating - a.rating;
@@ -4304,14 +4396,13 @@ function squadPitchHTML(t) {   ensureLineup(t);   const slots = FORMATIONS[t.for
 }
 
 /* ---------------- player profile ---------------- */
-/* ---------------- player profile ---------------- */
 const hashS = s => { let h = 2166136261; for (let i = 0; i < String(s).length; i++) { h ^= String(s).charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
-const ATTR_PROFILE = { ST:[3,8,-6,2,-25,2], CF:[0,6,-2,4,-25,0], RM:[6,0,2,7,-18,-6], LM:[6,0,2,7,-18,-6], CM:[-2,-2,7,3,-6,0], CDM:[-4,-8,4,-2,8,6], CB:[-5,-25,-8,-14,10,8], RB:[4,-15,-2,0,4,2], LB:[4,-15,-2,0,4,2], GK:[0,0,0,0,0,0] };
+const ATTR_PROFILE = { ST:[3,8,-6,2,-25,2], CF:[0,6,-2,4,-25,0], LW:[8,2,2,8,-18,-6], RW:[8,2,2,8,-18,-6], CAM:[0,3,8,6,-15,-4], LWB:[6,-10,0,1,3,2], RWB:[6,-10,0,1,3,2], RM:[6,0,2,7,-18,-6], LM:[6,0,2,7,-18,-6], CM:[-2,-2,7,3,-6,0], CDM:[-4,-8,4,-2,8,6], CB:[-5,-25,-8,-14,10,8], RB:[4,-15,-2,0,4,2], LB:[4,-15,-2,0,4,2], GK:[0,0,0,0,0,0] };
 function playerAttrBars(p) {
   const gk = p.pos === 'GK';
   const L = gk ? ['DIV','HAN','KIC','REF','SPD','POS'] : ['PAC','SHO','PAS','DRI','DEF','PHY'];
   const prof = ATTR_PROFILE[p.pos] || ATTR_PROFILE.CM;
-  return L.map((l, i) => [l, clamp(Math.round(p.rating + prof[i] + (hashS(p.id + '_' + i) - 0.5) * 10), 18, 97)]);
+  const tr = p.tr || [], paid = p.trPaid || 0, last = p.trLast || [];   return L.map((l, i) => [l, clamp(Math.round(p.rating + prof[i] + (hashS(p.id + '_' + i) - 0.5) * 10 + ((tr[i] || 0) - paid)), 18, 97), last[i] > 0 && G.round - last[i] >= 0 && G.round - last[i] <= 1]);
 }
 function starterRatingAt(t, pos) {
   const same = t.squad.filter(pl => pl.pos === pos);
@@ -4423,7 +4514,7 @@ function playerModal(pid) {
       <div style="min-width:0;flex:1">
         <h3 style="font-size:23px">${esc(p.name)}${isCaptain ? ' <span class="tag" style="color:var(--gold);border-color:var(--gold)">C</span>' : isVice ? ' <span class="tag">VC</span>' : ''}</h3>
         <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          ${posTag(p.pos)}<span>${flagSVG(p.nat)} ${natName(p.nat)}</span><span class="hint">Age ${p.age}${p.dob ? ', born ' + esc(p.dob) : ''}</span>
+          ${posTag(p.pos)}${(p.alt || []).map(a => `<span style="opacity:.6">${posTag(a)}</span>`).join('')}<span>${flagSVG(p.nat)} ${natName(p.nat)}</span><span class="hint">Age ${p.age}${p.dob ? ', born ' + esc(p.dob) : ''}</span>
         </div>
         <div style="margin-top:6px;font-size:13px">
           ${t ? crestHTML(t, 18) + ' ' + esc(t.n) : '<span class="hint">Free agent</span>'}
@@ -4442,7 +4533,7 @@ function playerModal(pid) {
     ${loanLine ? `<p style="margin:0 0 10px;font-size:13px;color:var(--gold)">${loanLine}</p>` : ''}
     <div class="cols">
       <div class="panel"><h3>Growth</h3><div class="pad">${sparkChart(p)}</div></div>
-      <div class="panel"><h3>Attributes</h3><div class="pad"><div class="att">${playerAttrBars(p).map(([l, v]) => `<b>${l}</b><div class="bar${v >= 70 ? ' g' : ''}"><i style="width:${v}%"></i></div><span>${v}</span>`).join('')}</div></div></div>
+      <div class="panel"><h3>Attributes</h3><div class="pad"><div class="att">${playerAttrBars(p).map(([l, v, up]) => `<b>${l}</b><div class="bar${v >= 70 ? ' g' : ''}"><i style="width:${v}%"></i></div><span>${v}${up ? '<em class="up">▲</em>' : ''}</span>`).join('')}</div></div></div>
     </div>
     <div class="cols" style="margin-top:13px">
       <div class="panel"><h3>Contract and value</h3><dl class="kv" style="padding:11px 13px">
@@ -4506,7 +4597,7 @@ function playerModal(pid) {
   };
   const rec = $('#pmRecall'); if (rec) rec.onclick = () => { const res = recallLoan(G, p.id); toast(res.msg); if (res.ok) { save(); closeModal(); render(); } };
   const cl = $('#pmClause'); if (cl) cl.onclick = () => {
-    const res = triggerReleaseClause(G, p.id); toast(res.msg); closeModal(); if (res.ok) { save(); render(); }
+    closeModal(); playerTermsModal(p.id, p.releaseClause, 3, true);
   };
   const off = $('#pmOffer'); if (off) off.onclick = () => { closeModal(); bidModal(p.id, p.value); };
   const offl = $('#pmOfferLoan'); if (offl) offl.onclick = () => { closeModal(); loanOfferModal(p.id, t); };
@@ -4532,7 +4623,7 @@ function tacticsPitchSpots(t, xi, slots, coords) {   const gk = { c1: '#7ddc1f',
   const spots = xi.map((p, i) => {
     const [x, y] = coords[i];
     const px = x, py = 100 - y;
-    const mismatch = posPenalty(p.pos, slots[i]) > 3;
+    const mismatch = posPenalty(p, slots[i]) > 3;
     return `<button class="spot ${selSpot === i ? 'sel' : ''}" data-slot="${i}" style="left:${px}%;top:${py}%">
       <span class="shirt" style="background:${t.c1};color:${isDark(t.c1) ? '#fff' : '#111'}">${slots[i]}</span>
       <span class="nm">${esc(p.last)}${mismatch ? ' !' : ''}</span></button>`;
@@ -4546,7 +4637,7 @@ function tacticsPitchSpots(t, xi, slots, coords) {   const gk = { c1: '#7ddc1f',
       <label class="hint" style="margin-left:auto"><input type="checkbox" id="liveChk" ${G.liveMode ? 'checked' : ''}> Watch matches live</label>
     </div>
     <div class="pad"><div class="fifa"><i class="hl"></i><i class="cc"></i><i class="bx1"></i><i class="bx2"></i>${tacticsPitchSpots(t, xi, slots, coords)}</div>
-      <p class="hint" style="text-align:center;margin:8px 0 0">A shirt marked ! is out of position and loses rating.</p></div>
+      <p class="hint" style="text-align:center;margin:8px 0 0">A red number next to a rating is the penalty for playing out of position.</p></div>
   </div>
   <div class="panel"><h3>Substitutes<span class="sub">${bench.length} available · tap a player, then a sub</span></h3>     <div class="fsubs">${bench.slice().sort((a, b) => b.rating - a.rating).map(p => `<button class="fsub" data-sub="${p.id}">${faceSVG(p, 40, t.c1)}<b>${p.rating}</b><small>${p.pos} · ${esc(p.last || p.name)}</small></button>`).join('')}</div>
     ${bench.length ? bench.slice(0, 0).map(p =>
@@ -4745,7 +4836,7 @@ function txReleaseAsk(pid) {
   $('#txRelYes').onclick = () => { const res = releasePlayer(G, pid); toast(res.msg); closeModal(); if (res.ok) { save(); render(); } };
 }
 
-function askBoardModal() {   const t = me();   const max = boardMaxGrant(G);   const board = G.board != null ? G.board : 62;   const cap = Math.max(0.2, Math.round(max * 2.4 * 100) / 100);   const already = G.lastBoardAsk === G.season;   openModal('Ask the board for funds',     `<p class="hint" style="margin:0 0 8px">${already ? "You've already asked the board this season — try again next season." : 'The board judge requests against how the season is going and their confidence in you. Ask for too much and they may offer less instead.'}</p>      <label class="hint">Amount requested</label>      <input class="range" type="range" id="askAmt" min="0.1" max="${cap.toFixed(2)}" step="0.05" value="${Math.max(0.1, Math.round(max * 0.6 * 100) / 100).toFixed(2)}" ${already ? 'disabled' : ''}>      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--faint)"><span>Requested</span>        <span id="askAmtV" style="font-family:var(--head);font-size:20px;color:var(--ink)"></span></div>      <div class="bar" style="margin-top:8px"><i id="askBar"></i></div>      <p id="askOdds" class="hint" style="margin:6px 0 0"></p>`,     `<button class="btn ghost sm" onclick="closeModal()">Cancel</button><button class="btn sm" id="askGo" ${already ? 'disabled' : ''}>Make the case</button>`);   if (already) return;   const ar = $('#askAmt');   const upd = () => {     const amt = +ar.value;     const tooMuch = amt > max * 1.15;     const chance = tooMuch ? 0 : clamp(0.35 + (board - 50) / 90 - (amt / max) * 0.25, 0.08, 0.95);     $('#askAmtV').textContent = money(amt);     $('#askBar').style.width = (tooMuch ? 100 : chance * 100).toFixed(0) + '%';     $('#askBar').style.background = tooMuch ? 'var(--gold)' : chance > 0.55 ? 'var(--up)' : chance > 0.25 ? 'var(--gold)' : 'var(--down)';     $('#askOdds').textContent = tooMuch ? "Well beyond what they'll sanction outright — expect a smaller counter-offer."       : chance > 0.7 ? 'A reasonable ask — they will likely agree.' : chance > 0.35 ? 'Could go either way.' : 'A tough sell given their confidence in you.';   };   ar.oninput = upd; upd();   $('#askGo').onclick = () => {     const res = askBoardForFunds(G, +ar.value);     closeModal();     if (res.ok) { toast(res.msg); save(); render(); } else { toastWarn(res.msg); }   }; } function negotiateModal(pid) {
+function askBoardModal() {   const t = me();   const max = boardMaxGrant(G);   const board = G.board != null ? G.board : 62;   const cap = Math.max(0.2, Math.round(max * 2.4 * 100) / 100);   const already = G.lastBoardAsk === G.season;   openModal('Ask the board for funds',     `<p class="hint" style="margin:0 0 8px">${already ? "You've already asked the board this season — try again next season." : 'The board judge requests against how the season is going and their confidence in you. Ask for too much and they may offer less instead.'}</p>      <label class="hint">Amount requested</label>      <input class="range" type="range" id="askAmt" min="0.1" max="${cap.toFixed(2)}" step="0.05" value="${Math.max(0.1, Math.round(max * 0.6 * 100) / 100).toFixed(2)}" ${already ? 'disabled' : ''}>      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--faint)"><span>Requested</span>        <span id="askAmtV" style="font-family:var(--head);font-size:20px;color:var(--ink)"></span></div>      <div class="bar" style="margin-top:8px"><i id="askBar"></i></div>      <p id="askOdds" class="hint" style="margin:6px 0 0"></p>`,     `<button class="btn ghost sm" onclick="closeModal()">Cancel</button><button class="btn sm" id="askGo" ${already ? 'disabled' : ''}>Make the case</button>`);   if (already) return;   const ar = $('#askAmt');   const upd = () => {     const amt = +ar.value;     const tooMuch = amt > max * 1.15;     const chance = tooMuch ? 0 : clamp(0.35 + (board - 50) / 90 - (amt / max) * 0.25, 0.08, 0.95);     $('#askAmtV').textContent = money(amt);     $('#askBar').style.width = (tooMuch ? 100 : chance * 100).toFixed(0) + '%';     $('#askBar').style.background = tooMuch ? 'var(--gold)' : chance > 0.55 ? 'var(--up)' : chance > 0.25 ? 'var(--gold)' : 'var(--down)';     $('#askOdds').textContent = tooMuch ? "Well beyond what they'll sanction outright — expect a smaller counter-offer."       : chance > 0.7 ? 'A reasonable ask — they will likely agree.' : chance > 0.35 ? 'Could go either way.' : 'A tough sell given their confidence in you.';   };   ar.oninput = upd; upd();   $('#askGo').onclick = () => {     const before = t.budget;     const res = askBoardForFunds(G, +ar.value);     closeModal();     if (res.ok) { showMoneyEffect('Board backing', before, t.budget, 'var(--up)', () => { toast(res.msg); save(); render(); }); } else { toastWarn(res.msg); }   }; } function negotiateModal(pid) {
   const t = me();
   const p = t.squad.find(x => x.id === pid); if (!p) return;
   const minW = Math.max(0.0002, p.wage * 0.7), maxW = p.wage * (p.wantsOut ? 2.2 : 1.8);
@@ -4786,10 +4877,12 @@ function askBoardModal() {   const t = me();   const max = boardMaxGrant(G);   c
     $('#negGo').disabled = overBudget;
   };
   wr.oninput = upd; yr.oninput = upd; upd();
-  $('#negGo').onclick = () => {
+$('#negGo').onclick = () => {
+    const before = t.budget;
     const res = negotiateContract(G, pid, +wr.value, +yr.value);
     closeModal();
-    if (res.ok) { toast(res.msg); save(); render(); } else { toastWarn(res.msg); }
+    if (res.ok) { showMoneyEffect(`${p.name} signs on`, before, t.budget, 'var(--down)', () => { toast(res.msg); save(); render(); }); }
+    else { toastWarn(res.msg); }
   };
 }
 
@@ -4859,15 +4952,13 @@ function bidModal(pid, ask) {
   $('#bidGo').onclick = () => {
     const v = +r.value;
     if (Math.random() > chanceOf(v)) { closeModal(); toastWarn(`${f.t.s} turn down ${money(v)} for ${p.name}.`); return; }
-    const before = me().budget;
-    const res = buyPlayer(G, pid, Math.round(v * 100) / 100);
-    if (!res.ok) { closeModal(); toastWarn(res.msg); return; }
-    save();
-    showMoneyEffect(`${p.name} signs!`, before, me().budget, 'var(--down)', () => { toast(res.msg); render(); });
+    closeModal();
+    toast(`${f.t.s} agree a fee of ${money(v)}. Now convince ${p.name}.`);
+    playerTermsModal(pid, Math.round(v * 100) / 100);
   };
 }
 
-function sellModal(pid) {
+function playerTermsModal(pid, fee, tries, viaClause) {   tries = tries == null ? 3 : tries;   const f = findPlayer(G, pid); if (!f) { toast('He has moved on.'); return; }   const t = me(), p = f.p;   const ref = Math.max(0.0002, p.wage);   const minW = ref * 0.7, maxW = ref * 2.2;   const gap = p.rating - clubLevel(t);   openModal(`Negotiate with ${esc(p.name)}`,     `<p class="hint" style="margin:0 0 8px">Fee agreed with ${esc(f.t.s)}: <b style="color:var(--ink)">${money(fee)}</b>. ${esc(p.name)} earns ${money(p.wage)} a season now.      He'll hear <b>${tries}</b> offer${tries === 1 ? '' : 's'} before he walks away.      ${firstTeamFull(t) ? '<br>Your first team is full, so he would join the reserves.' : ''}</p>      <label class="hint">Wage a season</label>      <input class="range" type="range" id="tW" min="${minW.toFixed(5)}" max="${maxW.toFixed(5)}" step="0.0001" value="${Math.min(maxW, ref * 1.1).toFixed(5)}">      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--faint)"><span>Wage</span>        <span id="tWV" style="font-family:var(--head);font-size:20px;color:var(--ink)"></span></div>      <label class="hint" style="display:block;margin-top:10px">Contract length</label>      <input class="range" type="range" id="tY" min="1" max="5" step="1" value="3">      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--faint)"><span>Years</span>        <span id="tYV" style="font-family:var(--head);font-size:20px;color:var(--ink)"></span></div>      <div class="bar" style="margin-top:8px"><i id="tBar"></i></div>      <p id="tOdds" class="hint" style="margin:6px 0 0"></p>`,     `<button class="btn ghost sm" onclick="closeModal()">Walk away</button><button class="btn sm" id="tGo">Offer terms</button>`);   const wr = $('#tW'), yr = $('#tY');   let chance = 0.5;   const upd = () => {     const w = +wr.value, y = +yr.value;     chance = 0.5 + (w / ref - 1) * 0.7 - Math.max(0, gap) * 0.012;     if (p.wantsOut) chance += 0.12;     if (p.age < 24 && y >= 4) chance += 0.05;     if (p.age > 30 && y >= 4) chance -= 0.05;     chance = clamp(chance, 0.03, 0.95);     const over = t.wageBill + w > t.wageBudget;     $('#tWV').textContent = money(w);     $('#tYV').textContent = y + (y === 1 ? ' year' : ' years');     $('#tBar').style.width = (chance * 100).toFixed(0) + '%';     $('#tBar').style.background = over ? 'var(--down)' : chance > 0.6 ? 'var(--up)' : chance > 0.3 ? 'var(--gold)' : 'var(--down)';     $('#tOdds').textContent = over ? `That wage is over your wage budget by ${money(t.wageBill + w - t.wageBudget)}.`       : chance > 0.75 ? "He'll likely sign this happily." : chance > 0.4 ? 'Could go either way.' : 'A tough sell at these terms.';     $('#tOdds').style.color = over ? 'var(--down)' : '';     $('#tGo').disabled = over;   };   wr.oninput = upd; yr.oninput = upd; upd();   $('#tGo').onclick = () => {     const w = Math.round(+wr.value * 100000) / 100000, y = +yr.value;     if (Math.random() > chance) {       closeModal();       if (tries <= 1) { toastWarn(`${p.name} rejects your terms and the move collapses.`); return; }       toastWarn(`${p.name} turns those terms down. Try again.`);       playerTermsModal(pid, fee, tries - 1, viaClause);       return;     }     const before = me().budget;     const res = buyPlayer(G, pid, fee, !!viaClause, { wage: w, years: y });     closeModal();     if (!res.ok) { toastWarn(res.msg); return; }     save();     showMoneyEffect(`${p.name} signs!`, before, me().budget, 'var(--down)', () => { toast(res.msg); render(); });   }; }  function sellModal(pid) {
   const p = me().squad.find(x => x.id === pid); if (!p) return;
   openModal(`Sell ${esc(p.name)}`,
     `<p class="hint" style="margin:0 0 10px">Valued at <b style="color:var(--ink)">${money(p.value)}</b>. Ask for more and clubs may not come forward.</p>
@@ -4898,7 +4989,7 @@ function sellModal(pid) {
   };
 }
 
-/* ---------------- Youth Academy ---------------- */
+/* ---------------- Training ---------------- */ function viewTraining() {   const v = $('#v-training'), t = me();   const lvl = t.training || 1, cost = TRAIN_COST[lvl] || 0, drill = t.drill || 'balanced';   const rep = G.lastTraining;   const items = (rep && rep.team === t.id ? rep.items : []).slice().sort((a, b) => (b.rise - a.rise));   const rows = items.map(it => {     const p = t.squad.find(x => x.id === it.pid) || t.youth.find(x => x.id === it.pid); if (!p) return '';     return `<button class="prow" data-pid="${p.id}" style="grid-template-columns:auto auto 1fr auto">       ${faceSVG(p, 34, t.c1)}${ratingTag(p.rating)}       <span class="who"><b>${esc(p.name)} ${flagSVG(p.nat)}</b><small>${p.pos} · ${p.age} · potential ${p.pot}</small></span>       <span style="text-align:right"><b style="color:#3ddc84">▲ ${it.attr}</b>${it.rise ? '<br><small class="up">+1 overall</small>' : ''}</span></button>`;   }).join('');   v.innerHTML = `<div class="cols">     <div class="panel"><h3>Training ground<span class="sub">level ${lvl} of 5</span></h3><div class="pad">       <div class="bar"><i style="width:${lvl * 20}%"></i></div>       <p class="hint" style="margin:8px 0 6px">Drills run once a week, every matchday. Each week a teenager has a ${Math.round(TRAIN_LVL[lvl] * 100)}% chance of improving an attribute, a 27-year-old ${Math.round(TRAIN_LVL[lvl] * trainAgeF(27) * 100)}%. Nobody trains past their potential.</p>       ${lvl < 5 ? `<button class="btn ghost sm" id="upTr">Upgrade to level ${lvl + 1} — ${money(cost)}</button>` : '<span class="hint">Top of the range.</span>'}     </div></div>     <div class="panel"><h3>Weekly drill focus</h3><div class="pad">       <div class="chipbar">${Object.entries(TRAIN_FOCUS).map(([k, x]) => `<button class="chip" data-drill="${k}" aria-pressed="${drill === k}">${x.name}</button>`).join('')}</div>       <p class="hint" style="margin:8px 0 0">Balanced trains what suits each player's position. A focus makes that attribute three times as likely to improve (goalkeepers train their own skills regardless).</p>     </div></div>   </div>   <div class="panel"><h3>${rep && rep.team === t.id ? `Week ${rep.round} report` : 'Training report'}<span class="sub">${rep ? esc(rep.drill) + ' drills · ' : ''}${items.length} improved</span></h3>     ${rows || '<div class="empty">Nobody improved yet. Reports appear after your next matchday.</div>'}</div>`;   const u = $('#upTr'); if (u) u.onclick = () => { const r = upgradeTraining(G); toast(r.msg); if (r.ok) { save(); render(); } };   v.querySelectorAll('[data-drill]').forEach(b => b.onclick = () => { const r = setDrill(G, b.dataset.drill); toast(r.msg); save(); viewTraining(); });   bindPlayerRows(v); }  /* ---------------- Youth Academy ---------------- */
 function viewYouth() {
   const v = $('#v-youth'), t = me();
   const cost = [0, 6, 12, 22, 36][t.academy] || 0;
@@ -4929,13 +5020,13 @@ function viewYouth() {
     (t.squad.filter(p => p.age <= 23).length
       ? t.squad.filter(p => p.age <= 23).sort((a, b) => b.pot - a.pot).map(p => playerRow(p, t, p.pot)).join('')
       : '<div class="empty">No youngsters in the senior squad.</div>') + `</div>`;
-  const u = $('#upAc'); if (u) u.onclick = () => { const r = upgradeAcademy(G); toast(r.msg); if (r.ok) { save(); render(); } };
+  const u = $('#upAc'); if (u) u.onclick = () => { const before = t.budget; const r = upgradeAcademy(G); if (r.ok) { showMoneyEffect('Academy upgraded', before, t.budget, 'var(--down)', () => { toast(r.msg); save(); render(); }); } else toast(r.msg); };
   v.querySelectorAll('[data-promote]').forEach(b => b.onclick = () => { const r = promoteYouth(G, +b.dataset.promote); toast(r.msg); if (r.ok) { save(); render(); } });
   v.querySelectorAll('[data-drop]').forEach(b => b.onclick = () => { releaseYouth(G, +b.dataset.drop); save(); render(); });
   bindPlayerRows(v);
 }
 
-/* ---------------- stats ---------------- */
+/* ---------------- training ---------------- */ const TRAIN_COST = [0, 5, 10, 18, 30];                 /* cost to go from level N to N+1 */ const TRAIN_LVL  = [0, 0.08, 0.13, 0.19, 0.26, 0.33];  // weekly chance a young player improves const TRAIN_FOCUS = {   balanced:  { name: 'Balanced',  idx: null },   finishing: { name: 'Finishing', idx: [1] },   passing:   { name: 'Passing',   idx: [2] },   dribbling: { name: 'Dribbling', idx: [3] },   defending: { name: 'Defending', idx: [4] },   fitness:   { name: 'Fitness',   idx: [0, 5] } }; function trainAgeF(a) { return a <= 19 ? 1 : a <= 21 ? 0.9 : a <= 23 ? 0.7 : a <= 25 ? 0.45 : a <= 28 ? 0.2 : a <= 31 ? 0.08 : 0.02; } function trainLevel(G, t) { return t.id === G.myTeam ? (t.training || 1) : (t.training || [3, 2, 2, 1, 1][t.tier] || 1); } function attrLabels(p) { return p.pos === 'GK' ? ['DIV','HAN','KIC','REF','SPD','POS'] : ['PAC','SHO','PAS','DRI','DEF','PHY']; }  function trainTeam(G, t, log) {   const lvl = trainLevel(G, t);   const fo = t.id === G.myTeam ? (TRAIN_FOCUS[t.drill || 'balanced'] || TRAIN_FOCUS.balanced).idx : null;   [t.squad, t.youth || []].forEach(list => list.forEach(p => {     if (p.inj > 0) return;     const room = p.pot - p.rating; if (room <= 0) return;     const chance = TRAIN_LVL[lvl] * trainAgeF(p.age) * Math.min(1, room / 5) * (p.reserve ? 0.8 : 1);     if (rnd() > chance) return;     const gk = p.pos === 'GK', prof = ATTR_PROFILE[p.pos] || ATTR_PROFILE.CM;     const w = [0, 1, 2, 3, 4, 5].map(i => {       let x = gk ? 1 : Math.max(0.4, 1 + prof[i] / 10);       if (!gk && fo && fo.includes(i)) x *= 3;       return x;     });     let r = rnd() * w.reduce((a, b) => a + b, 0), i = 0;     while (i < 5 && r > w[i]) { r -= w[i]; i++; }     p.tr = p.tr || [0, 0, 0, 0, 0, 0]; p.trLast = p.trLast || [0, 0, 0, 0, 0, 0];     p.tr[i]++; p.trLast[i] = G.round; p.trTicks = (p.trTicks || 0) + 1;     let rise = false;     if (p.trTicks >= 6 * ((p.trPaid || 0) + 1) && p.rating < p.pot) {       p.rating++; p.trPaid = (p.trPaid || 0) + 1; p.value = valueOf(p); rise = true;     }     if (log) log.push({ pid: p.id, attr: attrLabels(p)[i], rise });   })); } function trainingTick(G) {   const log = [];   G.teams.forEach(t => trainTeam(G, t, t.id === G.myTeam ? log : null));   const my = G.teams[G.myTeam];   const tl = G.trainTally || { n: 0, up: 0, weeks: 0 };   tl.n += log.length; tl.up += log.filter(x => x.rise).length; tl.weeks++;   G.trainTally = tl;   G.lastTraining = { round: G.round, team: my.id, drill: (TRAIN_FOCUS[my.drill || 'balanced'] || TRAIN_FOCUS.balanced).name, items: log }; } function upgradeTraining(G) {   const t = G.teams[G.myTeam], lvl = t.training || 1;   if (lvl >= 5) return { ok: false, msg: 'Your training ground is already top of the range.' };   const cost = TRAIN_COST[lvl];   if (t.budget < cost) return { ok: false, msg: `You need ${money(cost)} to upgrade.` };   t.budget = Math.round((t.budget - cost) * 100) / 100;   t.fin.buys += cost;   t.training = lvl + 1;   return { ok: true, msg: `Training ground upgraded to level ${t.training}.` }; } function setDrill(G, key) {   if (!TRAIN_FOCUS[key]) return { ok: false, msg: 'Unknown drill.' };   G.teams[G.myTeam].drill = key;   return { ok: true, msg: `Drills set to ${TRAIN_FOCUS[key].name}.` }; }  /* ---------------- stats ---------------- */
 function viewStats() {
   const v = $('#v-stats');
   const sc = topScorers(G, statTier, 15), as = topAssists(G, statTier, 12), cs = cleanSheets(G, statTier, 10);
@@ -4948,7 +5039,7 @@ function viewStats() {
         ${cols.map(c => `<td class="num">${c[1] === 'v' ? x.v : x.p[c[1]]}</td>`).join('')}</tr>`).join('') + '</tbody></table>'
     : '<div class="empty">Nothing to show until the ball starts rolling.</div>';
   const teams = sortTable(G, statTier).map(r => G.teams[r.id]).sort((a, b) => teamOverall(b) - teamOverall(a));
-  v.innerHTML = `<div class="panel"><div class="chipbar">${[0,1,2].map(i => `<button class="chip" data-st="${i}" aria-pressed="${statTier === i}">${TIER_SHORT[i]}</button>`).join('')}</div></div>
+  v.innerHTML = `<div class="panel"><div class="chipbar"> ${[0,1,2,3,4].map(i => `<button class="chip" data-st="${i}" aria-pressed="${statTier === i}">${TIER_SHORT[i]}</button>`).join('')}</div></div>
     <div class="cols">
       <div class="panel"><h3>Golden Boot</h3>${tbl(sc, [['Apps','apps'],['A','assists'],['Goals','v']])}</div>
       <div>
@@ -5336,26 +5427,34 @@ function viewCalendar() {
   const atMax = calY === maxD.getUTCFullYear() && calM === maxD.getUTCMonth();
 
   const eventsByDate = {};
-  for (let r = 0; r < totalRounds(G); r++) {
-    const iso = dateForRound(r, G.season);
+  function addCalEvent(baseIso, offsetDays, ev) {
+    const d = new Date(baseIso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + offsetDays);
+    const iso = d.toISOString().slice(0, 10);
     const [ey, em] = iso.split('-').map(Number);
-    if (ey !== calY || em - 1 !== calM) continue;
-    const evs = [];
+    if (ey !== calY || em - 1 !== calM) return;
+    if (!eventsByDate[iso]) eventsByDate[iso] = { evs: [], windowOpen: false };
+    eventsByDate[iso].evs.push(ev);
+  }
+  for (let r = 0; r < totalRounds(G); r++) {
+    const baseIso = dateForRound(r, G.season);
+    let slot = 0;
     const m2 = G.fixtures[t.tier][r].find(x => x.h === G.myTeam || x.a === G.myTeam);
     if (m2) {
       const opp = G.teams[m2.h === G.myTeam ? m2.a : m2.h], home = m2.h === G.myTeam;
       const score = m2.played ? ` ${home ? m2.hg : m2.ag}–${home ? m2.ag : m2.hg}` : '';
-      evs.push({ kind: home ? 'home' : 'away', label: `${home ? 'v' : '@'} ${opp.s}${score}` });
+      addCalEvent(baseIso, 0, { kind: home ? 'home' : 'away', badge: crestHTML(opp, 14), label: `${home ? 'v' : '@'} ${opp.s}${score}` });
     }
-    if (CUP_AT.includes(r + 1) && (!G.cup.done || r < G.round)) evs.push({ kind: 'cup', label: CUP_NAME });
-    if (S8_AT.includes(r + 1) && G.super8 && (G.super8.alive.includes(G.myTeam) || r < G.round)) evs.push({ kind: 'cup', label: SUPER8 });
-    if (KO_AT.includes(r + 1) && G.knockout && (G.knockout.alive.includes(G.myTeam) || r < G.round)) evs.push({ kind: 'cup', label: KNOCKOUT });
-    if (CAF_AT.includes(r + 1) && G.africa.caf && (G.africa.caf.alive.some(e => e.sa && e.id === G.myTeam) || r < G.round)) evs.push({ kind: 'caf', label: CAF_NAME });
-    if (CONFED_AT.includes(r + 1) && G.africa.confed && (G.africa.confed.alive.some(e => e.sa && e.id === G.myTeam) || r < G.round)) evs.push({ kind: 'caf', label: CONFED_NAME });
+    if (CUP_AT.includes(r + 1) && (!G.cup.done || r < G.round)) { slot++; addCalEvent(baseIso, slot * 3, { kind: 'cup', label: CUP_NAME }); }
+    if (S8_AT.includes(r + 1) && G.super8 && (G.super8.alive.includes(G.myTeam) || r < G.round)) { slot++; addCalEvent(baseIso, slot * 3, { kind: 'cup', label: SUPER8 }); }
+    if (KO_AT.includes(r + 1) && G.knockout && (G.knockout.alive.includes(G.myTeam) || r < G.round)) { slot++; addCalEvent(baseIso, slot * 3, { kind: 'cup', label: KNOCKOUT }); }
+    if (CAF_AT.includes(r + 1) && G.africa.caf && (G.africa.caf.alive.some(e => e.sa && e.id === G.myTeam) || r < G.round)) { slot++; addCalEvent(baseIso, slot * 3, { kind: 'caf', label: CAF_NAME }); }
+    if (CONFED_AT.includes(r + 1) && G.africa.confed && (G.africa.confed.alive.some(e => e.sa && e.id === G.myTeam) || r < G.round)) { slot++; addCalEvent(baseIso, slot * 3, { kind: 'caf', label: CONFED_NAME }); }
     const windowOpen = WINDOW_SUMMER.includes(r) || WINDOW_JAN.includes(r);
-    if (evs.length || windowOpen) eventsByDate[iso] = { evs, windowOpen };
+    if (windowOpen) {
+      const [ey, em] = baseIso.split('-').map(Number);
+      if (ey === calY && em - 1 === calM) { if (!eventsByDate[baseIso]) eventsByDate[baseIso] = { evs: [], windowOpen: false }; eventsByDate[baseIso].windowOpen = true; }
+    }
   }
-
   const dim = new Date(Date.UTC(calY, calM + 1, 0)).getUTCDate();
   const dow = new Date(Date.UTC(calY, calM, 1)).getUTCDay();
   let cells = '';
@@ -5363,7 +5462,7 @@ function viewCalendar() {
   for (let d = 1; d <= dim; d++) {
     const iso = `${calY}-${String(calM + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const info = eventsByDate[iso];
-    const marks = info ? info.evs.map(e => `<span class="m ${e.kind}">${esc(e.label)}</span>`).join('') : '';
+    const marks = info ? info.evs.map(e => `<span class="m ${e.kind}">${e.badge || ''}${esc(e.label)}</span>`).join('') : '';
     cells += `<div class="cd ${info && info.windowOpen ? 'win' : ''} ${iso === todayISO ? 'today' : ''}"><span class="dn">${d}</span>${marks}</div>`;
   }
 
@@ -5605,7 +5704,7 @@ function viewOtherClubs() {
     const res = applyForJob(G, +b.dataset.apply);
     toast(res.msg);
     save();
-    if (res.ok) { tableTier = me().tier; statTier = Math.min(me().tier, 2); ocPick = null; render(); }
+    if (res.ok) { tableTier = me().tier; statTier = me().tier; ocPick = null; render(); }
     viewOtherClubs();
   });
   bindPlayerRows(v);
