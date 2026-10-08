@@ -4245,14 +4245,14 @@ function liveControls() {
   else h = `<button class="chip" id="livePause">${ls.paused ? 'Resume' : 'Pause'}</button>`;
   if (!ls.ft) {
     h += [1, 2, 4, 8].map(s => `<button class="chip" data-sp="${s}" aria-pressed="${ls.speed === s}">${s}x</button>`).join('');
-    h += `<button class="chip" id="liveSkip">Skip to result</button>`;
+    if (ls.started) { const su = ls.mySide === 'h' ? ls.ctx.subsH : ls.ctx.subsA; h += `<button class="chip" id="liveSubs"${su >= 5 ? ' disabled' : ''}>Subs (${Math.max(0, 5 - su)})</button>`; }     h += `<button class="chip" id="liveSkip">Skip to result</button>`;
   }
   c.innerHTML = h;
   const go = $('#liveGo'); if (go) go.onclick = liveGo;
   const pa = $('#livePause'); if (pa) pa.onclick = livePause;
   const done = $('#liveDone'); if (done) done.onclick = endLive;
   c.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => { ls.speed = +b.dataset.sp; liveControls(); if (ls.timer) liveSchedule(); });
-  const sk = $('#liveSkip'); if (sk) sk.onclick = skipLive;
+  const sk = $('#liveSkip'); if (sk) sk.onclick = skipLive;   const sb = $('#liveSubs'); if (sb) sb.onclick = openLiveSubs;
 }
 
 function liveGo() {
@@ -4481,6 +4481,7 @@ function halfTime() {
     ls.half = 2; ls.minute = 45;
     aiSubs(G, ls.ctx);
     runPeriod(G, ls.ctx, 46, 92);
+    refreshLiveMarkers();
     ls.started = true; ls.paused = false;
     liveControls();
     liveSchedule();
