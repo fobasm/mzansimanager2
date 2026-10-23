@@ -3735,9 +3735,11 @@ const CONFED_NAME = 'CAF Confederation Cup';
 
 function entrantSA(G, rank) {
   const prev = G.records.seasons[G.records.seasons.length - 1];
-  if (prev) return rank === 0 ? prev.champ : (prev.runnerUp != null ? prev.runnerUp : prev.champ);
-  const st = sortTable(G, 0);
-  return st[rank].id;
+  if (prev && rank <= 1) return rank === 0 ? prev.champ : (prev.runnerUp != null ? prev.runnerUp : prev.champ);
+  if (prev && prev.topEight && prev.topEight[rank] != null && G.teams[prev.topEight[rank]]) return prev.topEight[rank];   // last season's final table
+  /* first season: there is no table yet, so the strongest top-flight clubs get the continental places */
+  const strong = G.teams.filter(t => t.tier === 0).sort((a, b) => ((b.base || 0) - (a.base || 0)) || (teamOverall(b) - teamOverall(a)));
+  return (strong[rank] || strong[strong.length - 1]).id;
 }
 function buildCAF(G) {
   const A = G.africa;
@@ -3764,9 +3766,13 @@ function buildCAF(G) {
 }
 function buildConfed(G) {
   const A = G.africa;
-  const st = sortTable(G, 0);
   const list = [];
-  [2, 3, 4].forEach(r => { const row = st[r]; if (row && !list.some(x => x.sa && x.id === row.id)) list.push({ sa: true, id: row.id }); });
+  /* 3rd to 5th in last season's table (or the strongest clubs in season one), never a club already in the Champions League */
+  const inCaf = new Set((A.caf && A.caf.alive ? A.caf.alive : []).filter(x => x.sa).map(x => x.id));
+  for (let r = 2; list.length < 3 && r < 14; r++) {
+    const id = entrantSA(G, r);
+    if (id != null && !inCaf.has(id) && !list.some(x => x.sa && x.id === id)) list.push({ sa: true, id });
+  }
   const byRank = A.leagues.slice().sort((a, b) => a.rank - b.rank);
   const cafIds = new Set((A.caf && A.caf.alive ? A.caf.alive : []).filter(x => !x.sa).map(x => x.id));
   const need = 16 - list.length;
@@ -3824,7 +3830,7 @@ function playContinentalRound(G, key, trophyName, prizeAmt, historyKey, newsKind
     } else winner = aggA > aggB ? A : B;
     ties.push({ a: A, b: B, leg1, leg2, aggA, aggB, pens, winner, stage: c.stage, single: c.stage === 3 });
   }
-  c.log.push({ stage: c.stage, ties });   ties.forEach(t => { if (!t.bye && t.winner.sa) payPrize(G, t.winner.id, prizeAmt * 0.04 * (c.stage + 1), trophyName + ' round prize'); });
+  c.log.push({ stage: c.stage, ties });   ties.forEach(t => {     if (t.bye || !(t.a.sa || t.b.sa)) return;     const w = t.winner, l = w === t.a ? t.b : t.a, hi = Math.max(t.aggA, t.aggB), lo = Math.min(t.aggA, t.aggB), rd = (CAF_ROUNDS[t.stage] || 'round').toLowerCase();     news(G, newsKind, t.pens ? `${cafShort(G, w)} edge ${cafShort(G, l)} on penalties (${hi}–${lo} on aggregate) in the ${trophyName} ${rd}.` : `${cafShort(G, w)} beat ${cafShort(G, l)} ${hi}–${lo} on aggregate in the ${trophyName} ${rd}.`, {});   });   ties.forEach(t => { if (!t.bye && t.winner.sa) payPrize(G, t.winner.id, prizeAmt * 0.04 * (c.stage + 1), trophyName + ' round prize'); });
   c.alive = ties.map(t => t.winner);
   if (c.alive.length === 1) {
     c.done = true; c.winner = c.alive[0];
@@ -6691,7 +6697,7 @@ function myCupTies(r) {
   });
   return out;
 }
-function myCupResultsHTML(res) {
+/* ================= continental football on match days ================= */ function contSide(e) {   const mine = e.sa && e.id === G.myTeam;   return `${e.sa ? flagSVG('ZA') + ' ' : ''}<span${mine ? ' style="color:var(--cup);font-weight:700"' : ''}>${esc(cafShort(G, e))}</span>`; } /* "Sundowns 3–1 Zesco (agg.)", legs underneath; winner in bold */ function contResultLine(t) {   if (t.bye) return `<div>${contSide(t.a)} <span class="hint">— bye</span></div>`;   const aW = t.winner === t.a, bW = t.winner === t.b;   const legs = t.single ? '' : ` <span class="hint">(${t.leg1[0]}–${t.leg1[1]}, ${t.leg2[1]}–${t.leg2[0]})</span>`;   const pens = t.pens ? ` <span class="hint">${t.pens[0]}–${t.pens[1]} pens</span>` : '';   return `<div style="margin-top:3px"><span${aW ? ' style="font-weight:700"' : ''}>${contSide(t.a)}</span> <b class="num">${t.aggA}–${t.aggB}</b> <span${bW ? ' style="font-weight:700"' : ''}>${contSide(t.b)}</span>${legs}${pens}</div>`; } /* The Matchday tab's "Continental football" panel: ties due on the next matchday, results    from the last one, or when the next round is — for every club, not just the ones in it. */ function continentalPanelHTML() {   if (!G.africa) return '';   const md = G.round + 1, blocks = [];   [['caf', CAF_NAME, CAF_AT], ['confed', CONFED_NAME, CONFED_AT]].forEach(([k, name, at]) => {     const c = G.africa[k]; if (!c) return;     const head = `<b style="color:var(--cup)">🌍 ${esc(name)}</b>`;     const box = inner => `<div class="pad" style="border-top:1px solid var(--line)">${inner}</div>`;     if (c.done) { blocks.push(box(`${head} · <span class="hint">won by</span> ${c.winner ? contSide(c.winner) : '—'}`)); return; }     if (at.includes(md)) {       const rows = [];       for (let i = 0; i < c.alive.length; i += 2) {         const A = c.alive[i], B = c.alive[i + 1];         rows.push(`<div style="margin-top:3px">${contSide(A)} ${B ? `<span class="hint">v</span> ${contSide(B)}` : '<span class="hint">— bye</span>'}</div>`);       }       blocks.push(box(`${head} · ${CAF_ROUNDS[c.stage] || 'Round'} <span class="hint">· played on this matchday</span>${rows.join('')}`));       return;     }     if (at.includes(G.round) && c.log.length) {       const L = c.log[c.log.length - 1];       blocks.push(box(`${head} · ${CAF_ROUNDS[L.stage] || 'Round'} <span class="hint">· last matchday</span>${L.ties.map(contResultLine).join('')}`));       return;     }     const next = at.find(x => x > md);     const sa = c.alive.filter(e => e.sa);     blocks.push(box(`${head} · <span class="hint">${next ? `${CAF_ROUNDS[c.stage] || 'Next round'} on matchday ${next}` : 'between rounds'}</span><div style="margin-top:3px;color:var(--dim)">${sa.length ? 'South African clubs still in: ' + sa.map(contSide).join(', ') : 'No South African clubs left in it.'}</div>`));   });   return blocks.length ? `<h3>Continental football<span class="sub">CAF Champions League and Confederation Cup</span></h3>${blocks.join('')}` : ''; } /* In the results pop-up: the rest of any continental round played on that matchday. */ function continentalRoundHTML(res) {   const me_ = G.myTeam;   return [[res.caf, CAF_NAME], [res.confed, CONFED_NAME]].map(([ties, name]) => {     if (!ties || !ties.length) return '';     const mineIn = ties.some(t => !t.bye && ((t.a.sa && t.a.id === me_) || (t.b.sa && t.b.id === me_)));     const rows = ties.filter(t => !t.bye && !((t.a.sa && t.a.id === me_) || (t.b.sa && t.b.id === me_)));     if (!rows.length) return '';     return `<h4 style="margin:14px 0 4px;font-size:17px">🌍 ${esc(name)} · ${CAF_ROUNDS[ties[0].stage] || 'Round'}${mineIn ? ' — other ties' : ''}</h4>${rows.map(contResultLine).join('')}`;   }).join(''); }  function myCupResultsHTML(res) {
   const rows = [], me_ = G.myTeam;
   [[res.cup, CUP_NAME, CUP_ROUNDS], [res.s8, SUPER8, S8_ROUNDS], [res.ko, KNOCKOUT, KO_ROUNDS]].forEach(([ties, name, names]) => {
     (ties || []).forEach(t => {
