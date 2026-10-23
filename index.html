@@ -432,7 +432,7 @@ tr.zone-down td:first-child{box-shadow:inset 3px 0 var(--down)}
 .range{width:100%;accent-color:var(--gold)}
 
 /* ---------- modal ---------- */
-.scrim{position:fixed;inset:0;z-index:60;background:rgba(3,8,5,.74);display:grid;place-items:center;padding:14px;overflow:auto}
+.scrim{position:fixed;inset:0;z-index:700;background:rgba(3,8,5,.74);display:grid;place-items:center;padding:14px;overflow:auto}
 .scrim[hidden]{display:none}
 .modal{background:var(--panel);border:1px solid var(--line2);border-radius:14px;width:min(600px,100%);max-height:88vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.55)}
 .modal header{padding:12px 15px;border-bottom:1px solid var(--line);background:var(--panel2);display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:2}
@@ -440,7 +440,7 @@ tr.zone-down td:first-child{box-shadow:inset 3px 0 var(--down)}
 .modal .x{margin-left:auto;background:none;border:none;color:var(--dim);font-size:22px;line-height:1;padding:0 4px}
 .modal .body{padding:14px 15px}
 .modal footer{padding:11px 15px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;position:sticky;bottom:0;background:var(--panel)}
-#toast-root{position:fixed;left:50%;transform:translateX(-50%);bottom:84px;z-index:70;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;max-width:92vw}
+#toast-root{position:fixed;left:50%;transform:translateX(-50%);bottom:84px;z-index:800;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;max-width:92vw}
 .toast{background:color-mix(in srgb,var(--cup) 22%,var(--panel));border:1px solid var(--cup);color:#fff;font-weight:600;border-radius:8px;padding:10px 15px;font-size:13.5px;box-shadow:0 0 0 1px var(--cup),0 8px 24px rgba(0,0,0,.45);max-width:92vw;animation:toastIn .18s ease-out}
 .toast.warn{background:color-mix(in srgb,var(--down) 22%,var(--panel));border-color:var(--down);color:#fff;font-weight:600;box-shadow:0 0 0 1px var(--down),0 8px 24px rgba(0,0,0,.5)}
 .toast.big{background:color-mix(in srgb,var(--gold) 20%,var(--panel));border-color:var(--gold);font-weight:600;font-size:14.5px;box-shadow:0 0 0 1px var(--gold),0 8px 26px rgba(0,0,0,.5)}
