@@ -3166,7 +3166,7 @@ function buyPlayer(G, pid, fee, viaClause, terms) {
     if (f.p.rating > clubLevel(me) + 10 && !f.p.wantsOut)
       return { ok: false, msg: `${f.p.name} sees ${me.s} as a step down and turns the move down.` };
   }
-  f.t.squad = f.t.squad.filter(p => p.id !== pid);
+  f.t.squad = f.t.squad.filter(p => p.id !== pid); aiRestock(G, f.t);
   f.t.budget += fee; f.t.fin.sales += fee;
 f.p.contract = terms ? terms.years : rint(2, 4); if (terms) f.p.wage = terms.wage; f.p.fee = fee; f.p.joinedSeason = G.season; f.p.wantsOut = false; f.p.releaseClause = null;
      f.p.clubs.push({ id: me.id, from: G.season });   if (G.pendingSellOn && G.pendingSellOn.pid === pid) { f.p.sellOn = { club: G.pendingSellOn.club, pct: G.pendingSellOn.pct }; G.pendingSellOn = null; }
@@ -7497,7 +7497,7 @@ function loanOfferModal(pid, owner) {
      <div class="bar"><i style="width:${(chance * 100).toFixed(0)}%;background:${chance > 0.4 ? 'var(--up)' : 'var(--gold)'}"></i></div>`,
     `<button class="btn ghost sm" onclick="closeModal()">Cancel</button><button class="btn sm" id="loanReqGo">Ask</button>`);
   $('#loanReqGo').onclick = () => {
-    if (owner.squad.length <= MIN_SENIOR) { closeModal(); toastWarn(`${owner.s} can't lend him: they'd have fewer than ${MIN_SENIOR} senior players.`); return; }     if (Math.random() > chance) { closeModal(); toastWarn(`${owner.s} turn down the loan request.`); return; }
+    /* no 15-player floor on AI clubs: they restock after a loan (see aiRestock) */     if (Math.random() > chance) { closeModal(); toastWarn(`${owner.s} turn down the loan request.`); return; }
     const me_ = me();
     owner.squad = owner.squad.filter(x => x.id !== pid);
     p.loan = { from: owner.id, seasons: 1, wageShare: 0.5 };
