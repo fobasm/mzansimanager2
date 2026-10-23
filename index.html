@@ -5766,7 +5766,7 @@ function showRunModal(runs) {
     const mine = m.h === G.myTeam ? m.hg : m.ag, th = m.h === G.myTeam ? m.ag : m.hg;
     const r = mine > th ? 'W' : mine === th ? 'D' : 'L';
     return `<div class="res"><div class="h">${res.round}. ${m.h === G.myTeam ? 'vs' : 'at'} ${esc(opp.s)}</div>
-       <div class="sc">${mine}–${th}</div><div class="a"><span class="form"><i class="${r}">${r}</i></span></div></div>${myCupResultsHTML(res)}`;
+       <div class="sc">${mine}–${th}</div><div class="a"><span class="form"><i class="${r}">${r}</i></span></div></div>${myCupResultsHTML(res)}${continentalRoundHTML(res)}`;
   }).join('');
   openModal(`${runs.length} matchday${runs.length > 1 ? 's' : ''} played`,
     rows + `<p style="margin:13px 0 0;color:var(--dim)">You're ${ordinal(posOfTeam(G, G.myTeam))} in the ${TIER_SHORT[me().tier]} after ${G.round} games.</p>`,
