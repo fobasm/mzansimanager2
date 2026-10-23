@@ -5726,7 +5726,7 @@ function showMatchdayModal(res) {
     </div>
     <p style="text-align:center;color:var(--dim);margin:0">${verdict} ${ordinal(posOfTeam(G, G.myTeam))} after ${G.round} ${G.round === 1 ? 'game' : 'games'}.</p>
    ${m.forfeit ? forfeitNoteHTML(m) : goalList(m.allEv || m.ev) + potmCardHTML(m) + tacStatsHTML(m) + matchSummaryHTML(m)}`;
-  body += myCupResultsHTML(res);   if (res.cup) body += cupRoundHTML(res.cup);
+  body += myCupResultsHTML(res);   body += continentalRoundHTML(res);   if (res.cup) body += cupRoundHTML(res.cup);
   openModal(`Matchday ${res.round}`, body,
     `<button class="btn ghost sm" onclick="closeModal();tab='table';render()">See the log</button>
      <button class="btn sm" id="potmContinue">Continue</button>`);
@@ -6751,6 +6751,8 @@ function viewMatch() {
         <b style="color:var(--cup)">🏆 ${esc(c.name)}</b> · ${c.round}<br>
         <span style="color:var(--dim)">${c.opp ? `${c.home ? 'Home to' : 'Away to'} ${esc(c.opp)}` : esc(c.note)}</span></div>`).join('')));
   }
+  const contHTML = G.finished ? '' : continentalPanelHTML();
+  if (contHTML) v.appendChild(el('div', 'panel', contHTML));
   const cols = el('div', 'cols');
   const last = G.round > 0 ? G.fixtures[t.tier][G.round - 1] : null;
   cols.appendChild(el('div', 'panel',
@@ -9111,8 +9113,8 @@ function viewCalendar() {
     if (CUP_AT.includes(r + 1) && (!G.cup.done || r < G.round)) { slot++; addCalEvent(baseIso, slot * 3, { kind: 'cup', title: CUP_NAME }, r); }
     if (S8_AT.includes(r + 1) && G.super8 && (G.super8.alive.includes(G.myTeam) || r < G.round)) { slot++; addCalEvent(baseIso, slot * 3, { kind: 'cup', title: SUPER8 }, r); }
     if (KO_AT.includes(r + 1) && G.knockout && (G.knockout.alive.includes(G.myTeam) || r < G.round)) { slot++; addCalEvent(baseIso, slot * 3, { kind: 'cup', title: KNOCKOUT }, r); }
-    if (CAF_AT.includes(r + 1) && G.africa.caf && (G.africa.caf.alive.some(e => e.sa && e.id === G.myTeam) || r < G.round)) { slot++; addCalEvent(baseIso, slot * 3, { kind: 'caf', title: CAF_NAME }, r); }
-    if (CONFED_AT.includes(r + 1) && G.africa.confed && (G.africa.confed.alive.some(e => e.sa && e.id === G.myTeam) || r < G.round)) { slot++; addCalEvent(baseIso, slot * 3, { kind: 'caf', title: CONFED_NAME }, r); }
+    if (CAF_AT.includes(r + 1) && G.africa.caf && (!G.africa.caf.done || r < G.round)) { slot++; addCalEvent(baseIso, slot * 3, { kind: 'caf', title: CAF_NAME }, r); }
+    if (CONFED_AT.includes(r + 1) && G.africa.confed && (!G.africa.confed.done || r < G.round)) { slot++; addCalEvent(baseIso, slot * 3, { kind: 'caf', title: CONFED_NAME }, r); }
     if (windowRangeFor(baseIso)) {
       const [ey, em] = baseIso.split('-').map(Number);
       if (ey === calY && em - 1 === calM) { if (!eventsByDate[baseIso]) eventsByDate[baseIso] = { evs: [], windowOpen: false }; eventsByDate[baseIso].windowOpen = true; monthHasWindow = true; }
