@@ -15,3 +15,8 @@ ul{padding-left:22px}li{margin:.4em 0}
 .btn{display:inline-block;background:var(--gold);color:#111;font-weight:700;padding:12px 22px;border-radius:8px;text-decoration:none;margin-top:10px}
 .foot{border-top:1px solid var(--line);padding:22px 20px 40px;text-align:center;background:var(--panel)}
 .foot p{margin:.4em auto;max-width:800px}
+
+.tbl{width:100%;border-collapse:collapse;margin:14px 0;font-size:16px}.tbl th,.tbl td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}.tbl th{color:var(--gold)}
+.btn.alt{background:transparent;color:var(--gold);border:2px solid var(--gold)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:26px}
+.glist{list-style:none;padding:0}.glist li{padding:14px 0;border-bottom:1px solid var(--line)}
