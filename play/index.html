@@ -4,8 +4,17 @@
 <script>/* works at any path: finds the site folder above /play/ so images, music and links resolve on the live site and on test sites */(function(){var p=location.pathname.replace(/[^\/]*$/,'').replace(/play\/$/,'');document.write('<base href="'+p+'">');})();</script>
 <link rel="canonical" href="https://mzansimanager.co.za/play/">
 <meta property="og:url" content="https://mzansimanager.co.za/play/">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1748576501857716"
-     crossorigin="anonymous"></script>
+  <script>
+  (function () {
+    var inApp = /; wv\)/.test(navigator.userAgent) ||
+      (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+    if (inApp) { document.documentElement.classList.add('inapp'); return; }
+    var s = document.createElement('script');
+    s.async = true; s.crossOrigin = 'anonymous';
+    s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1748576501857716';
+    document.head.appendChild(s);
+  })();
+  </script>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-SP5YVYYE8Q"></script>
 <script>
@@ -662,7 +671,7 @@ body{padding-left:env(safe-area-inset-left,0);padding-right:env(safe-area-inset-
 </style>
 <script id="sdbShim"> /* SAVE STORAGE: career saves live in IndexedDB (hundreds of MB) instead of localStorage (about 5 MB).    The game keeps using localStorage calls; this layer redirects the save keys. Old saves are moved over on first launch. */ (function () {   const PFX = 'mzansi_manager_2026_', real = window.localStorage, DBN = 'mm_saves', ST = 'kv';   const mem = new Map(); let db = null, warned = false, gaveUp = false;   const warn = () => { if (warned) return; warned = true; try { toastWarn('Could not write to device storage. Export your career file to be safe.'); } catch (e) { } };   const on = k => db && typeof k === 'string' && k.indexOf(PFX) === 0;   const put = (k, v) => { try { const t = db.transaction(ST, 'readwrite'); t.objectStore(ST).put(v, k); t.onerror = t.onabort = warn; } catch (e) { warn(); } };   const del = k => { try { const t = db.transaction(ST, 'readwrite'); t.objectStore(ST).delete(k); t.onerror = t.onabort = warn; } catch (e) { warn(); } };   const keys = () => { const out = []; if (db) mem.forEach((v, k) => out.push(k)); for (let i = 0; i < real.length; i++) { const k = real.key(i); if (!(db && k.indexOf(PFX) === 0)) out.push(k); } return out; };   const api = {     getItem(k) { if (/_last$/.test(k) && real.getItem('mm_nolast')) return null; return on(k) ? (mem.has(k) ? mem.get(k) : null) : real.getItem(k); },     setItem(k, v) { if (/_last$/.test(k)) real.removeItem('mm_nolast'); if (on(k)) { v = String(v); mem.set(k, v); put(k, v); } else real.setItem(k, v); },     removeItem(k) { if (/_last$/.test(k)) real.setItem('mm_nolast', '1'); if (on(k)) { mem.delete(k); del(k); } else real.removeItem(k); },     key(i) { return keys()[i] || null; },     get length() { return keys().length; },     clear() { real.clear(); }   };   api.ready = new Promise(res => {     if (!window.indexedDB) { res(); return; }     const fin = () => { if (!gaveUp) { gaveUp = true; res(); } };     setTimeout(() => { if (!db) fin(); }, 4000);     try {       const rq = indexedDB.open(DBN, 1);       rq.onupgradeneeded = () => rq.result.createObjectStore(ST);       rq.onerror = rq.onblocked = fin;       rq.onsuccess = () => {         const d = rq.result;         if (gaveUp) { try { d.close(); } catch (e) { } return; }         const c = d.transaction(ST, 'readonly').objectStore(ST).openCursor();         c.onerror = fin;         c.onsuccess = () => {           const cur = c.result;           if (cur) { mem.set(cur.key, cur.value); cur.continue(); return; }           if (gaveUp) return;           const mv = []; for (let i = 0; i < real.length; i++) { const k = real.key(i); if (k && k.indexOf(PFX) === 0 && !mem.has(k)) mv.push(k); }           const finish = () => { db = d; gaveUp = true; res(); };           if (!mv.length) { finish(); return; }           const w = d.transaction(ST, 'readwrite'), s2 = w.objectStore(ST);           mv.forEach(k => { const v = real.getItem(k); mem.set(k, v); s2.put(v, k); });           w.oncomplete = () => { mv.forEach(k => { try { real.removeItem(k); } catch (e) { } }); finish(); };           w.onerror = w.onabort = () => { mv.forEach(k => mem.delete(k)); fin(); };         };       };     } catch (e) { fin(); }   });   try { Object.defineProperty(window, 'localStorage', { get() { return api; }, configurable: true }); window.SDB = api; } catch (e) { window.SDB = { ready: Promise.resolve() }; }   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { } })(); </script> 
 </head>
-<!-- built and developed by Amagemu (panar.co.za) -->
+<!-- built and developed by Amagemu Studios (panar.co.za) -->
 <body>
 
 <section id="landing">
@@ -733,7 +742,7 @@ body{padding-left:env(safe-area-inset-left,0);padding-right:env(safe-area-inset-
   </div>
 
   <div class="promo">
-    <p>Mzansi Manager was designed and developed by Amagemu.</p>
+    <p class="byStudio"><img class="studioLogo" src="img/amagemu-studios-white.webp" alt="Amagemu Studios" width="169" height="36"><span>Mzansi Manager was designed and developed by Amagemu Studios.</span></p>
     <a href="https://panar.co.za" target="_blank" rel="noopener">Visit panar.co.za</a>
   </div>
   <div data-footer></div>
@@ -804,7 +813,7 @@ body{padding-left:env(safe-area-inset-left,0);padding-right:env(safe-area-inset-
   </div>
   <div id="appFooterWrap" style="max-width:1200px;margin:0 auto;padding:0 14px 90px">
     <div class="promo">
-      <p>Game developed by Amagemu.</p>       <p><a class="appDl" href="https://mzansimanager.co.za/android/">Get the app</a></p>
+      <p class="byStudio"><img class="studioLogo" src="img/amagemu-studios-white.webp" alt="Amagemu Studios" width="169" height="36"><span>Game developed by Amagemu Studios.</span></p>       <p><a class="appDl" href="https://mzansimanager.co.za/android/">Get the app</a></p>
       <a href="https://panar.co.za" target="_blank" rel="noopener">Visit panar.co.za</a>
     </div>
     <div data-footer></div>
@@ -852,6 +861,70 @@ function mdKit(t, away) { const sp = t.currentSponsor; return `<div class="kitBi
 .rating.pot,.potglow{animation:none!important;filter:none!important}
 .homebtn.bthlogo{animation:none!important}
 .tw,.cf-wrap{contain:layout style}
+</style>
+  <style id="menuLayoutCss">
+/* narrow windows with the menu on the side: slimmer menu so the page keeps room */
+@media(max-width:900px){html[data-menu=side] nav.side{flex-basis:168px}html[data-menu=side] .navlink{font-size:13.5px}}
+#menuLayoutBtn{display:none}
+@media(min-width:701px){#menuLayoutBtn{display:inline-flex}}
+</style>
+<script id="menuLayout">
+/* lets the player choose where the menu sits: on the side or along the top (remembered on this device) */
+(function () {
+  var KEY = 'mm_menu_layout', mq = window.matchMedia('(min-width:701px)'), narrow = [], wide = [];
+  function get() { try { var v = localStorage.getItem(KEY); return v === 'side' || v === 'top' ? v : ''; } catch (e) { return ''; } }
+  function set(v) { try { localStorage.setItem(KEY, v); } catch (e) { } }
+  function scan() {
+    try {
+      Array.prototype.forEach.call(document.styleSheets, function (ss) {
+        var rules; try { rules = ss.cssRules; } catch (e) { return; }
+        Array.prototype.forEach.call(rules, function (r) {
+          if (r.type !== 4) return;
+          var c = r.media.mediaText;
+          if (/max-width:\s*900px/.test(c)) {
+            var ok = r.cssRules.length > 0;
+            Array.prototype.forEach.call(r.cssRules, function (x) { if (!/(^|[\s,])(nav\.side|\.side|\.shellbody|\.navlink|\.navgrp|\.navrow|\.navchev|\.navsub|\.navsublink)/.test(x.selectorText || '')) ok = false; });
+            if (ok) narrow.push([r, c]);
+          } else if (/min-width:\s*901px/.test(c) && /nav\.side/.test(r.cssText)) wide.push([r, c]);
+        });
+      });
+    } catch (e) { }
+  }
+  function effective() { var m = get(); if (m) return m; return window.innerWidth > 900 ? 'side' : 'top'; }
+  function apply() {
+    var m = get(), on = mq.matches && !!m;
+    narrow.forEach(function (p) { p[0].media.mediaText = on ? (m === 'top' ? 'all' : 'not all') : p[1]; });
+    wide.forEach(function (p) { p[0].media.mediaText = on ? (m === 'side' ? 'all' : 'not all') : p[1]; });
+    document.documentElement.setAttribute('data-menu', on ? m : '');
+    var b = document.getElementById('menuLayoutBtn');
+    if (b) { var side = effective() === 'side'; b.title = side ? 'Move the menu to the top' : 'Move the menu to the side'; b.setAttribute('aria-label', b.title); b.innerHTML = side
+      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>'
+      : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg>'; }
+  }
+  function init() {
+    scan();
+    var anchor = document.getElementById('careerBtn');
+    if (anchor && !document.getElementById('menuLayoutBtn')) {
+      var b = document.createElement('button'); b.className = 'navbtn'; b.id = 'menuLayoutBtn'; b.type = 'button';
+      b.onclick = function () { set(effective() === 'side' ? 'top' : 'side'); apply(); window.dispatchEvent(new Event('resize')); };
+      anchor.insertAdjacentElement('afterend', b);
+    }
+    apply();
+    try { mq.addEventListener('change', apply); } catch (e) { try { mq.addListener(apply); } catch (e2) { } }
+    window.addEventListener('resize', function () { var b = document.getElementById('menuLayoutBtn'); if (b && !get()) apply(); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+  <style id="brandCss">
+/* Amagemu Studios branding */
+.studioLogo{height:36px;width:auto;display:block;flex:none}
+.promo p.byStudio{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#mmEnter .url{display:flex;flex-direction:column;align-items:center;gap:18px}
+#mmEnter .url .by{display:flex;flex-direction:column;align-items:center;gap:9px;opacity:0;animation:mmBy 1s .5s ease forwards}
+#mmEnter .url .by small{font:600 10px var(--head,system-ui);letter-spacing:.32em;color:#9aa0a8}
+#mmEnter .url .by img{height:clamp(34px,7vmin,56px);width:auto}
+@keyframes mmBy{to{opacity:1}}
 </style>
 </body>
 </html>
