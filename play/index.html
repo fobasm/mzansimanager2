@@ -27,15 +27,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mzansi Manager 2026</title>
-<meta name="description" content="Manage a South African football club across five divisions — the Premier League down to the semi-pro 5th Division. Sim matches live, run the transfer market, build an academy, chase continental glory. Free to play on mobile and PC.">
-<meta name="keywords" content="South African football game, football manager game, soccer manager, PSL game, Mzansi football, career mode, free browser game, football sim South Africa, diski, ibhola, kasi flavor, african football, football manager, football games ">
+<meta name="description" content="The football management sim that puts African football first. Manage a club in South Africa or England, sim matches live, buy and sell across leagues, build an academy and chase continental glory. Free to play on mobile and PC.">
+<meta name="keywords" content="African football game, football manager game, soccer manager, football sim, PSL game, Mzansi football, career mode, free browser game, diski, ibhola, african football manager, football games, English football game">
 <meta property="og:title" content="Mzansi Manager 2026">
-<meta property="og:description" content="A free South African football management sim — five divisions, live matches, transfers, youth academies and continental football. Play on your phone or your computer.">
+<meta property="og:description" content="The free football management sim that puts African football first. Live matches, transfers across leagues, youth academies and continental football. Play on your phone or your computer.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://mzansimanager.co.za/assets/mm-poster.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Mzansi Manager 2026">
-<meta name="twitter:description" content="Manage a South African football club through five divisions. Free, browser-based, mobile and PC.">
+<meta name="twitter:description" content="The football management sim that puts African football first. Free, browser-based, mobile and PC.">
 <meta name="twitter:image" content="https://mzansimanager.co.za/assets/mm-poster.jpg">
 <link rel="icon" id="favicon" type="image/png" href="mm-logo.jpg"> <link rel="apple-touch-icon" href="mm-logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -211,6 +211,9 @@ main{max-width:1200px;margin:0 auto;padding:16px 14px 118px}
 .tbl tr.me td{font-weight:600}
 .pos{font-family:var(--head);font-size:15px;width:24px;color:var(--dim);text-align:center !important}
 tr.zone-up td:first-child{box-shadow:inset 3px 0 var(--up)}
+tr.zone-champ td:first-child{box-shadow:inset 3px 0 #f5c518}
+tr.zone-champ td{background:rgba(245,197,24,.09)}
+tr.zone-champ td.pos{color:#f5c518;font-weight:700}
 tr.zone-cup td:first-child{box-shadow:inset 3px 0 var(--cup)}
 tr.zone-cl td:first-child{box-shadow:inset 3px 0 var(--cup)}
 tr.zone-confed td:first-child{box-shadow:inset 3px 0 var(--gold)}
@@ -233,6 +236,9 @@ tr.zone-down td:first-child{box-shadow:inset 3px 0 var(--down)}
 .gtable tr.zone-playoff td:first-child{box-shadow:inset 4px 0 #fb7b18}
 .gtable tr.zone-up td:first-child{box-shadow:inset 4px 0 #34c471}
 .gtable tr.zone-down td:first-child{box-shadow:inset 4px 0 #ff5a5a}
+.gtable tr.zone-champ td:first-child{box-shadow:inset 4px 0 #f5c518}
+.gtable tr.zone-champ td{background:rgba(245,197,24,.09)}
+.gtable tr.zone-champ td.pos{color:#f5c518}
 .gseasonbar{display:flex;gap:10px;align-items:center;padding:10px 13px;border-bottom:1px solid #2c2c2e;background:#1f1f1f;flex-wrap:wrap}
 .gseasonbar label{color:#9e9ea0;font-size:12.5px}
 .gseasonbar select{background:#2c2c2e;color:#e7e8ea;border:1px solid #3a3a3d;border-radius:6px;padding:6px 10px;font-family:inherit;font-size:14px}
@@ -676,12 +682,12 @@ body{padding-left:env(safe-area-inset-left,0);padding-right:env(safe-area-inset-
 
 <section id="landing">
   <picture>   <source media="(min-aspect-ratio: 1/1)" srcset="mzansi_manager_poster_landscape.webp">   <img class="landing-poster" src="mzansi_manager_poster.png" alt="Mzansi Manager 2026"> </picture>
-  <button class="btn" id="enterGameBtn">Play Now</button>   <div class="landtxt" style="width:100%;max-width:760px;color:#d5dae0;font:16px/1.7 system-ui,sans-serif;padding:28px 4px 20px"><h1 style="color:#fff;font-size:26px;margin:0 0 10px">Mzansi Manager 2026: the free South African football management game</h1><p>Mzansi Manager is a free football manager game set in South Africa. Take charge of one of 100 clubs across five divisions, from the Mzansi Premier League down to the 5th Division, or found your own club and build it from the bottom. Pick your squad, set your tactics, watch your matches live, work the transfer market, develop young players in your academy and chase cups and continental football.</p><p>It runs in your browser on a phone or a computer, needs no download or account, and saves your career automatically.</p><p style="margin-top:14px"><a href="how-to-play/" style="color:#f5c518">How to play</a> &middot; <a href="leagues/" style="color:#f5c518">Leagues and clubs</a> &middot; <a href="guides/" style="color:#f5c518">Strategy guides</a> &middot; <a href="about/" style="color:#f5c518">About</a></p></div>
+  <button class="btn" id="enterGameBtn">Play Now</button>   <div class="landtxt" style="width:100%;max-width:760px;color:#d5dae0;font:16px/1.7 system-ui,sans-serif;padding:28px 4px 20px"><h1 style="color:#fff;font-size:26px;margin:0 0 10px">Mzansi Manager 2026: the free football management sim that puts African football first</h1><p>Mzansi Manager is a free football management sim that puts African football first. Take charge of a club in South Africa, from the Mzansi Premier League down to the 5th Division, or in England's top two divisions, or found your own club and build it from the bottom. Pick your squad, set your tactics, watch your matches live, work the transfer market, develop young players in your academy and chase cups and continental football.</p><p>It runs in your browser on a phone or a computer, needs no download or account, and saves your career automatically.</p><p style="margin-top:14px"><a href="how-to-play/" style="color:#f5c518">How to play</a> &middot; <a href="leagues/" style="color:#f5c518">Leagues and clubs</a> &middot; <a href="guides/" style="color:#f5c518">Strategy guides</a> &middot; <a href="about/" style="color:#f5c518">About</a></p></div>
 </section>
 
 <section id="start" style="display:none">
   <img class="hero-logo" id="heroLogo" alt="Mzansi Manager 2026">
-  <p class="lede">Five divisions, 100 South African clubs, full squads with faces, ratings and leagues.
+  <p class="lede">African football first: South Africa from the Premier League to the 5th Division, plus England's top two, with full squads, faces, ratings and leagues.
   You don't kick the ball — you pick the team, watch the match unfold, work the market and <b>build a club over seasons</b>.</p>   <p style="text-align:center"><a class="appDl" href="https://mzansimanager.co.za/android/">Get the app</a></p>
 
   <div class="step">
@@ -705,7 +711,7 @@ body{padding-left:env(safe-area-inset-left,0);padding-right:env(safe-area-inset-
 
   <div class="step">
     <h2>Choose your club</h2>
-    <p class="note">100 clubs across five divisions. Start at the bottom if you want the hard road.</p>
+    <p class="note">Pick your club from seven divisions across South Africa and England. Start at the bottom if you want the hard road.</p>
     <div class="chipbar" style="padding-left:0;border:none" id="pickTierBar"></div>
     <div class="grid" id="clubGrid"></div>
   </div>
