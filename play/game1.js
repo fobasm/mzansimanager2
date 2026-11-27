@@ -1334,6 +1334,39 @@ function backdateCareer(p, clubId, season) {
   p.cApps = cApps; p.cG = cG; p.cA = cA;
 }
 
+
+/* every player aged 20+ has a plausible career behind him: seasons he has no record for are filled in from age 18 */
+function fillCareer(G, p, t) {
+  if (!p || p.age < 20 || p._cf) return; p._cf = 1;
+  const season = G.season, want = Math.min(p.age - 18, 14);
+  p.career = p.career || [];
+  const have = new Set(p.career.map(c => c.season)), missing = [];
+  for (let y = 1; y <= want; y++) if (!have.has(season - y)) missing.push(y);
+  if (!missing.length) return;
+  const ov = t && t.ov, cc = t && t.cc, tier = t && t.tier != null ? t.tier : 1;
+  const pool = (ov ? G.ov.teams.filter(x => x.cc === cc) : G.teams).filter(x => x.tier >= tier && x !== t);
+  const prior = pool.length ? pool[rint(0, pool.length - 1)] : null;
+  const grp = POS_GROUP[p.pos] || 'MID';
+  const goalRate = { ATT: 0.34, MID: 0.11, DEF: 0.035, GK: 0.002 }[grp], assistRate = { ATT: 0.14, MID: 0.17, DEF: 0.05, GK: 0.01 }[grp];
+  let ca = 0, cg = 0, cs = 0;
+  missing.forEach(y => {
+    const ageThen = p.age - y; if (ageThen < 18) return;
+    const histRating = Math.round(clamp(p.rating - y * rint(1, 2) + gauss() * 1.5, 32, p.rating));
+    const apps = Math.round(clamp(10 + ageThen * 0.8 + (histRating >= 75 ? 3 : 0) + gauss() * 6, 4, 38));
+    const goals = Math.max(0, Math.round(apps * goalRate * (0.5 + rnd()))), assists = Math.max(0, Math.round(apps * assistRate * (0.5 + rnd())));
+    p.career.push({ season: season - y, club: prior ? prior.id : (t ? t.id : 0), tier: prior ? prior.tier : tier, apps, g: goals, a: assists, rating: histRating });
+    ca += apps; cg += goals; cs += assists;
+  });
+  p.cApps = (p.cApps || 0) + ca; p.cG = (p.cG || 0) + cg; p.cA = (p.cA || 0) + cs;
+  p.career.sort((a, b) => a.season - b.season);
+  if (prior) { p.clubs = p.clubs || []; const oldest = Math.max(...missing); if (!p.clubs.some(c => c.id === prior.id)) { p.clubs.unshift({ id: prior.id, from: season - oldest }); } }
+}
+function repairCareers(G) {
+  const all = G.teams.concat(G.ov ? G.ov.teams : []);
+  all.forEach(t => (t.squad || []).forEach(p => fillCareer(G, p, t)));
+  (G.freeAgents || []).forEach(p => fillCareer(G, p, null));
+}
+
 /* ---------------- world ---------------- */
 function newGame(clubIndex, manager, seed, startSeason) {
   SEED = seed || Math.floor(Math.random() * 1e9);
@@ -1460,6 +1493,19 @@ function pickForSlot(t, slot, used) {   let pool = t.squad.filter(p => isFit(p, 
   });
   return t.lineup;
 }
+/* clubs run by the computer re-pick their best XI every few matchdays, so a lineup left out of position by a manager who moved on is fixed */
+function aiRefreshLineups(G) {
+  const fix = t => {
+    if (!t || !t.squad || t.squad.length < 11) return;
+    ensureLineup(t);
+    const slots = FORMATIONS[t.formation] || FORMATIONS['4-4-2'];
+    const val = xi => xi.reduce((s, p, i) => s + effRating(p, slots[i] || p.pos), 0);
+    const cur = lineupOf(t), best = autoLineup(t).map(id => t.squad.find(p => p.id === id)).filter(Boolean);
+    if (best.length === 11 && val(best) > val(cur) + 2) { t.lineup = best.map(p => p.id); t.subFor = {}; }
+  };
+  G.teams.forEach(t => { if (t.id !== G.myTeam || G.jobless) fix(t); });
+  if (G.ov) G.ov.teams.forEach(fix);
+}
 function autoLineup(t) {
   const slots = FORMATIONS[t.formation] || FORMATIONS['4-4-2'];
   const fit = t.squad.filter(p => isFit(p, t) && !p.reserve);
@@ -1557,7 +1603,7 @@ function roundRobin(ids) {
 function blankRow(id) { return { id, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }; }
 
 /* AI clubs get a random shirt sponsor from the same list as the player's offers (shown on their kits, no money moves) */ function assignAiSponsors(G, onlyMissing) {   G.teams.forEach(t => {     if (t.id === G.myTeam) return;     if (onlyMissing && t.currentSponsor) return;     const sp = pick(SPONSORS);     const tierMult = [1, 0.42, 0.16, 0.06, 0.02][t.tier] || 0.02;     const amount = Math.max(0.15, Math.round(14 * (0.85 + rnd() * 0.15) * tierMult * (0.6 + ((t.rep || 5) / 10) * 0.8) * 100) / 100);     t.currentSponsor = { name: sp.name, icon: sp.icon, img: sp.img, c1: sp.c1, c2: sp.c2, amount, freq: 'upfront', paidSoFar: amount, installments: 1, ai: true };   }); } function buildSeason(G, first) {
-  G.round = 0; G.curDay = 0; G.fixtures = []; G.tables = []; G.finished = false;
+  G.round = 0; G.curDay = first ? 0 : -PRESEASON_DAYS; G.fixtures = []; G.tables = []; G.finished = false;
   for (let tier = 0; tier < TIER_NAMES.length; tier++) {
     const ids = shuffle(G.teams.filter(t => t.tier === tier).map(t => t.id));
     G.fixtures.push(roundRobin(ids).map(rd => rd.map(m => ({ ...m, hg: 0, ag: 0, played: false, ev: [] }))));
@@ -1611,6 +1657,9 @@ function dateForRound(round, season) {
   return new Date(seasonStartUTC(season) + round * DAYS_PER_ROUND * 86400000).toISOString().slice(0, 10);
 }
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const PRESEASON_DAYS = 31;   /* a new season starts on 1 July, a month before the first matchday */
+function seasonEndIdx(G) { return Math.round((Date.UTC(G.season + 1, 6, 1, 12) - seasonStartUTC(G.season)) / 86400000); }
+function seasonOverNow(G) { return !!G.finished && (G.curDay || 0) >= seasonEndIdx(G); }
 function currentDateISO() { return new Date(seasonStartUTC(G.season) + (G.curDay || 0) * 86400000).toISOString().slice(0, 10); }
 function isMatchdayToday() { return !G.finished && G.round < totalRounds(G) && currentDateISO() >= dateForRound(G.round, G.season); }
 function cupDayIdx(G) { const c = G.cup; if (!c || c.done || c.stage >= CUP_AT.length) return null; const d = new Date(dateForRound(CUP_AT[c.stage] - 1, G.season) + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + 3); return Math.round((d.getTime() - seasonStartUTC(G.season)) / 86400000); } function isDomCupDayToday() { if (G.finished || !cupDueNow(G)) return false; const i = cupDayIdx(G); return i != null && (G.curDay || 0) >= i; } function isCupDayToday() { return isDomCupDayToday() || isContDayToday(); } /* ---- transfer desk: clubs can also come in between matchdays while a window is open ---- */
@@ -1628,7 +1677,7 @@ function dailyTransferDesk() {
   G.pendingBids = (G.pendingBids || []).concat(bids).slice(-15);
   setTimeout(bidPing, 1200);
   try { const un = unreadCount(G), fresh = un - (G.lastUnread || 0); if (fresh > 0) toast(`✉ ${fresh} new message${fresh === 1 ? '' : 's'} in your inbox`); G.lastUnread = un; } catch (e) { }
-} function advanceOneDay() { if (G.finished) return;  G.curDay = (G.curDay || 0) + 1; try { dailyTransferDesk(); } catch (e) { console.error('desk', e); } saveSoon(); }
+} function advanceOneDay() { if (G.finished && seasonOverNow(G)) return;  G.curDay = (G.curDay || 0) + 1; try { dailyTransferDesk(); } catch (e) { console.error('desk', e); } saveSoon(); }
 function windowRangeFor(iso) {
   const d = new Date(iso + 'T00:00:00Z'), y = d.getUTCFullYear(), m = d.getUTCMonth();
   if (m === 6 || m === 7) return [Date.UTC(y, 6, 1), Date.UTC(y, 8, 1) - 1];
@@ -2067,6 +2116,7 @@ if (G.round >= totalRounds(G)) return null;
   if (cupDueNow(G) || contPending()) return null;
   tickInjuries(G);
   try { intlRoundHook(G); } catch (e) { console.error('intl', e); }
+  try { if (G.round % 3 === 0) aiRefreshLineups(G); } catch (e) { console.error('lineups', e); }
   const out = { round: G.round + 1, tiers: TIER_NAMES.map(() => []), cup: null };
   for (let tier = 0; tier < TIER_NAMES.length; tier++) {
     G.fixtures[tier][G.round].forEach(m => {
@@ -2099,14 +2149,14 @@ if (G.round >= totalRounds(G)) return null;
   }
   try { trainingTick(G); } catch (e) { console.error('Training error', e); }
   africaRound(G); ovRound(G);
-  if (CUR_CC === 'ZA' && S8_AT.includes(G.round)) out.s8 = playKnockoutRound(G, G.super8, S8_ROUNDS, 6);
-  if (CUR_CC === 'ZA' && KO_AT.includes(G.round)) out.ko = playKnockoutRound(G, G.knockout, KO_ROUNDS, 7);
-  contKeys().forEach(k => { if (CONT[k].at.includes(G.round) && !contHold(G, k)) out[k] = playContRound(G, k); });
+  if (CUR_CC === 'ZA' && S8_AT.includes(G.round) && !contHold(G, 's8')) out.s8 = playKnockoutRound(G, G.super8, S8_ROUNDS, 6);
+  if (CUR_CC === 'ZA' && KO_AT.includes(G.round) && !contHold(G, 'ko')) out.ko = playKnockoutRound(G, G.knockout, KO_ROUNDS, 7);
+  contKeysAll().forEach(k => { if (CONT[k].at.includes(G.round) && !contHold(G, k)) out[k] = playContRound(G, k); });
   if (G.round >= totalRounds(G)) {
     let guard = 0;
     while (!G.cup.done && guard++ < 10) playCupRound(G);
-    guard = 0; while (!G.super8.done && guard++ < 6) playKnockoutRound(G, G.super8, S8_ROUNDS, 6);
-    guard = 0; while (!G.knockout.done && guard++ < 8) playKnockoutRound(G, G.knockout, KO_ROUNDS, 7);
+    guard = 0; while (!G.super8.done && !contPending() && guard++ < 6) playKnockoutRound(G, G.super8, S8_ROUNDS, 6);
+    guard = 0; while (!G.knockout.done && !contPending() && guard++ < 8) playKnockoutRound(G, G.knockout, KO_ROUNDS, 7);
     /* if your own continental final is still waiting to be played live, the season stays open until you have played it */
     if (!contPending()) closeSeasonTail(G);
   }
@@ -2215,7 +2265,7 @@ function aiCatchUp(G) {
     t.budget = Math.round(t.budget * 1.12 * 100) / 100; t._r = null;
   });
 }
-function endSeason(G) {   try { snapClubRank(G); } catch (e) { console.error('rank snapshot', e); }
+function endSeason(G) {   try { repairCareers(G); } catch (e) { }   try { snapClubRank(G); } catch (e) { console.error('rank snapshot', e); }
   const N_TIERS = TIER_NAMES.length;
   const repSnap = {}; G.teams.forEach(t => { repSnap[t.id] = t.rep; });
   const sum = { season: G.season, champions: [], promoted: [], relegated: [], cup: G.cup.winner, retired: [], breakout: [] };
@@ -3481,6 +3531,7 @@ const CONT = {
   ecc: { name: ECC_NAME, at: CONFED_AT, hist: 'eccHistory', prize: 25, label: 'Euro Contender Cup winners' }
 };
 function contKeys() { return CUR_CC === 'ZA' ? ['caf', 'confed'] : (isEuro(CUR_CC) ? ['ekc', 'ecc'] : []); }
+function contKeysAll() { return ['caf', 'confed', 'ekc', 'ecc']; }
 function playContRound(G, k) { const c = CONT[k]; return playContinentalRound(G, k, c.name, c.prize, c.hist, 'caf'); }
 function contHomeE(e) { return !!e && e.sa && !(typeof e.id === 'string' && e.id.indexOf('ov') === 0); }
 function contNat(e) { const t = G.teams[e.id]; return t && t.ov ? t.cc : HOME_NAT; }
@@ -3488,7 +3539,7 @@ function contNat(e) { const t = G.teams[e.id]; return t && t.ov ? t.cc : HOME_NA
 /* European Kings Cup: the best clubs of Spain and England, 16 teams, two legs and a one-match final; the winners earn a star.
    Euro Contender Cup: the next tier of clubs; no star, but the winners are in the next European Kings Cup automatically. */
 const EURO_N = 16;
-function euroCCs(G) { return [CUR_CC].concat(G.ov ? (G.ov.ccs || [G.ov.cc]).filter(c => isEuro(c) && c !== CUR_CC) : []); }
+function euroCCs(G) { return WORLD_CCS.filter(isEuro); }
 /* a division's clubs, best first: last season's final table, or club strength in the first season */
 function euroTier(G, cc, tier) {
   const all = (cc === CUR_CC ? G.teams.filter(t => t.tier === tier) : (G.ov ? G.ov.teams.filter(t => t.cc === cc && t.tier === tier) : [])).map(t => t.id);
@@ -3499,7 +3550,6 @@ function euroTier(G, cc, tier) {
 function buildEuro(G) {
   const A = G.africa; if (!A) return;
   A.ekcHistory = A.ekcHistory || []; A.eccHistory = A.eccHistory || [];
-  if (!isEuro(CUR_CC)) { A.ekc = null; A.ecc = null; return; }
   const ccs = euroCCs(G), top = ccs.map(cc => euroTier(G, cc, 0)), sec = ccs.map(cc => euroTier(G, cc, 1));
   const used = new Set(), ekc = [];
   const take = id => { if (id != null && G.teams[id] && !used.has(id) && ekc.length < EURO_N) { used.add(id); ekc.push({ sa: true, id }); } };
@@ -3518,16 +3568,27 @@ function buildEuro(G) {
 }
 /* at the end of a season: remember last season's final tables (for the next qualification) and who won the Euro Contender Cup */
 function euroSeasonEnd(G) {
-  if (!isEuro(CUR_CC)) return;
   try { ovFinish(G); } catch (e) { }
-  const lists = {};
-  lists[CUR_CC + '0'] = sortTable(G, 0).map(r => r.id); lists[CUR_CC + '1'] = sortTable(G, 1).map(r => r.id);
-  if (G.ov) G.ov.leagues.forEach(L => { if (isEuro(L.cc)) lists[L.cc + L.tier] = afrTable(L).map(r => r.id); });
+  const lists = {}, hist = G.worldHist = G.worldHist || [];
+  const nm = id => { const t = G.teams[id]; return t ? t.n : '?'; };
+  TIER_NAMES.forEach((_, k) => {
+    let tb; try { tb = sortTable(G, k); } catch (e) { return; }
+    if (!tb || !tb.length) return;
+    lists[CUR_CC + k] = tb.map(r => r.id);
+    hist.push({ season: G.season, cc: CUR_CC, tier: k, champ: nm(tb[0].id), runner: tb[1] ? nm(tb[1].id) : '' });
+  });
+  if (G.ov) G.ov.leagues.forEach(L => {
+    const tb = afrTable(L); if (!tb.length) return;
+    lists[L.cc + L.tier] = tb.map(r => r.id);
+    hist.push({ season: G.season, cc: L.cc, tier: L.tier, champ: nm(tb[0].id), runner: tb[1] ? nm(tb[1].id) : '' });
+  });
+  if (hist.length > 900) hist.splice(0, hist.length - 900);
   G.euroQual = { season: G.season, lists };
   const e = G.africa && G.africa.ecc && G.africa.ecc.winner; G.euroHolder = e ? e.id : null;
 }
 
 function entrantSA(G, rank) {
+  if (CUR_CC !== 'ZA') { const l = euroTier(G, 'ZA', 0); return l[Math.min(rank, l.length - 1)]; }
   const prev = G.records.seasons[G.records.seasons.length - 1];
   if (prev && rank <= 1) return rank === 0 ? prev.champ : (prev.runnerUp != null ? prev.runnerUp : prev.champ);
   if (prev && prev.topEight && prev.topEight[rank] != null && G.teams[prev.topEight[rank]]) return prev.topEight[rank];   // last season's final table
@@ -3536,12 +3597,11 @@ function entrantSA(G, rank) {
   return (strong[rank] || strong[strong.length - 1]).id;
 }
 function buildCAF(G) {
-  if (CUR_CC !== 'ZA') { if (G.africa) G.africa.caf = null; return; }
   const A = G.africa;
   const list = [];
   list.push({ sa: true, id: entrantSA(G, 0) });
   const second = entrantSA(G, 1);
-  list.push({ sa: true, id: second === list[0].id ? sortTable(G, 0)[1].id : second });
+  list.push({ sa: true, id: second === list[0].id ? entrantSA(G, 2) : second });
   const byRank = A.leagues.slice().sort((a, b) => a.rank - b.rank);
   const need = 16 - list.length;
   byRank.slice(0, need).forEach(L => {
@@ -3560,7 +3620,6 @@ function buildCAF(G) {
   A.caf = { stage: 0, alive: shuffle(list.slice(0, 16)), log: [], winner: null, done: false };
 }
 function buildConfed(G) {
-  if (CUR_CC !== 'ZA') { if (G.africa) G.africa.confed = null; return; }
   const A = G.africa;
   const list = [];
   /* 3rd to 5th in last season's table (or the strongest clubs in season one), never a club already in the Champions League */
@@ -3598,8 +3657,8 @@ function cafRating(G, e) { return e.sa ? teamOverall(G.teams[e.id]) : afrClub(G,
 
 function cafLeg(G, home, away) {
   const ovE = e => e.sa && typeof e.id === 'string' && e.id.indexOf('ov') === 0;
-  /* two overseas clubs: nobody is watching, so the tie is simulated abstractly */
-  if (ovE(home) && ovE(away)) return simAbstract(teamOverall(G.teams[home.id]), teamOverall(G.teams[away.id]), 2.6);
+  /* no club of the country you manage in: nobody is watching, so the tie is simulated abstractly */
+  if (!contHomeE(home) && !contHomeE(away)) return simAbstract(cafRating(G, home), cafRating(G, away), 2.6);
   const H = home.sa ? G.teams[home.id] : buildForeignClub(G, home.id);
   const A = away.sa ? G.teams[away.id] : buildForeignClub(G, away.id);
   if (!H || !A) { const [hg, ag] = simAbstract(cafRating(G, home), cafRating(G, away), 2.6); return [hg, ag]; }
@@ -3631,7 +3690,7 @@ function playContinentalRound(G, key, trophyName, prizeAmt, historyKey, newsKind
     } else winner = aggA > aggB ? A : B;
     ties.push({ a: A, b: B, leg1, leg2, aggA, aggB, pens, winner, stage: c.stage, single: c.stage === 3 });
   }
-  c.log.push({ stage: c.stage, ties });   ties.forEach(t => {     if (t.bye || !(contHomeE(t.a) || contHomeE(t.b))) return;     const w = t.winner, l = w === t.a ? t.b : t.a, hi = Math.max(t.aggA, t.aggB), lo = Math.min(t.aggA, t.aggB), rd = (CAF_ROUNDS[t.stage] || 'round').toLowerCase();     news(G, newsKind, t.pens ? `${cafShort(G, w)} edge ${cafShort(G, l)} on penalties (${hi}–${lo} on aggregate) in the ${trophyName} ${rd}.` : `${cafShort(G, w)} beat ${cafShort(G, l)} ${hi}–${lo} on aggregate in the ${trophyName} ${rd}.`, {});   });   ties.forEach(t => { if (!t.bye && t.winner.sa) payPrize(G, t.winner.id, prizeAmt * 0.04 * (c.stage + 1), trophyName + ' round prize'); });
+  c.log.push({ stage: c.stage, ties });   ties.forEach(t => {     if (t.bye || !(contHomeE(t.a) || contHomeE(t.b) || (t.stage >= 2 && (t.a.sa || t.b.sa)))) return;     const w = t.winner, l = w === t.a ? t.b : t.a, hi = Math.max(t.aggA, t.aggB), lo = Math.min(t.aggA, t.aggB), rd = (CAF_ROUNDS[t.stage] || 'round').toLowerCase();     news(G, newsKind, t.pens ? `${cafShort(G, w)} edge ${cafShort(G, l)} on penalties (${hi}–${lo} on aggregate) in the ${trophyName} ${rd}.` : `${cafShort(G, w)} beat ${cafShort(G, l)} ${hi}–${lo} on aggregate in the ${trophyName} ${rd}.`, {});   });   ties.forEach(t => { if (!t.bye && t.winner.sa) payPrize(G, t.winner.id, prizeAmt * 0.04 * (c.stage + 1), trophyName + ' round prize'); });
   c.alive = ties.map(t => t.winner);
   if (c.alive.length === 1) {
     c.done = true; c.winner = c.alive[0];
@@ -3659,7 +3718,7 @@ function buildExtraCups(G) {
   const prev = G.records.seasons[G.records.seasons.length - 1];
   let eight;
   if (prev && prev.topEight) eight = prev.topEight.slice();
-  else eight = st.slice(0, 8).map(r => r.id);
+  else eight = G.teams.filter(t => t.tier === 0).sort((a, b) => ((b.base || 0) - (a.base || 0)) || (teamOverall(b) - teamOverall(a))).slice(0, 8).map(t => t.id);
   eight = eight.filter(id => G.teams[id]);
   while (eight.length < 8) { const cand = st.find(r => !eight.includes(r.id)); eight.push(cand.id); }
   G.super8 = { name: SUPER8, alive: shuffle(eight.slice(0, 8)), stage: 0, log: [], winner: null, done: false };
@@ -3675,15 +3734,16 @@ function playKnockoutRound(G, comp, rounds, prize) {
   for (let i = 0; i < ids.length; i += 2) {
     const h = ids[i], a = ids[i + 1];
     if (a == null) { comp.alive = [h]; continue; }
-    const ctx = createMatch(G, h, a, true);
-    runPeriod(G, ctx, 1, 90);
+    const KL = koLiveScore(G, comp, h, a);
+    const ctx = KL ? { hg: KL[0], ag: KL[1] } : createMatch(G, h, a, true);
+    if (!KL) runPeriod(G, ctx, 1, 90);
     let winner, pens = null;
     if (ctx.hg === ctx.ag) {
       let ph = 0, pa = 0;
       do { ph += rnd() < 0.76 ? 1 : 0; pa += rnd() < 0.74 ? 1 : 0; } while (ph === pa);
       pens = [ph + 3, pa + 3]; winner = ph > pa ? h : a;
     } else winner = ctx.hg > ctx.ag ? h : a;
-    finishMatch(G, ctx);
+    if (!KL) finishMatch(G, ctx);
     ties.push({ h, a, hg: ctx.hg, ag: ctx.ag, pens, winner, stage: comp.stage });
   }
   if (ties.length) {
@@ -3868,7 +3928,7 @@ function jobOffers(G, opts) {
 }
 /* moving to a club in the other country: the two worlds swap places. Every club keeps its squad, money and
    division; the country you move to becomes your home league and the one you leave becomes the overseas one. */
-let CARRY_HOOK = null, CARRY_PID = 0;
+let CARRY_HOOK = null, CARRY_PID = 0, ID_MAP = {};
 function crossMove(id, wage, years) {
   const old = G, tgt = old.teams[id]; if (!tgt || !old.ov) return;
   const T = window.__jobTerms && window.__jobTerms.tid === id ? window.__jobTerms : null;
@@ -3897,8 +3957,9 @@ function crossMove(id, wage, years) {
   const clone = o => JSON.parse(JSON.stringify(o));
   CARRY_PID = oldPID;
   CARRY_HOOK = NG => {
-    const idMap = {};
+    const idMap = {}; ID_MAP = idMap;
     NG.teams.forEach((nt, k) => { const s = ovBy[key(nt)]; if (s) idMap[s.id] = k; });
+    NG.teams.forEach((nt, k) => { const s = homeBy[key(nt)]; if (s) idMap[s.id] = k; });
     NG.ov.teams.forEach((nt, j) => { const s = homeBy[key(nt)] || ovBy[key(nt)]; if (s) idMap[s.id] = 'ov' + j; });
     const fixP = (p, vm) => {
       (p.clubs || []).forEach(c => { if (c.id != null && idMap.hasOwnProperty(c.id)) c.id = idMap[c.id]; });
@@ -3923,7 +3984,7 @@ function crossMove(id, wage, years) {
       cl.squad.forEach(p => { p.wage = Math.round(p.wage * kk * 100000) / 100000; fixP(p, M); p.value = valueOf(p); });
       cl.budget = Math.round(cl.budget * kk * 100) / 100; cl.finBase = nt.finBase;
       Object.assign(nt, cl);
-      nt.wageBill = wageOf(nt); nt.wageBudget = Math.round(nt.wageBill * 1.4 * 100) / 100; ensureLineup(nt);
+      nt.wageBill = wageOf(nt); nt.wageBudget = Math.round(nt.wageBill * 1.4 * 100) / 100; nt.subFor = {}; nt.lineup = autoLineup(nt); ensureLineup(nt);
     });
     NG.ov.teams.forEach((t, i) => { t.tier = t.tier; });
     ovBuildLeagues(NG.ov);
@@ -3932,6 +3993,34 @@ function crossMove(id, wage, years) {
   try { NG = newGame(idx, JSON.parse(JSON.stringify(prev)), null, season); }
   finally { CARRY_HOOK = null; CARRY_PID = 0; }
   PID = Math.max(PID, oldPID);
+  /* it is the same career: inbox, news, Bathini, records, MM Coins and history all come with you */
+  try {
+    const mapId = x => (x != null && Object.prototype.hasOwnProperty.call(ID_MAP, x)) ? ID_MAP[x] : x;
+    ['inbox', 'mailKeys', 'mailSeq', 'news', 'mm', 'watchlist', 'legends', 'objLog', 'trainTally', 'bdayChecked', 'bdayPending', 'intlInit', 'worldHist', 'intl', 'transferLog'].forEach(k => { if (old[k] !== undefined) NG[k] = old[k]; });
+    if (old.curDay != null && NG.season === old.season) NG.curDay = old.curDay;
+    (NG.transferLog || []).forEach(r => { r.from = mapId(r.from); r.to = mapId(r.to); });
+    if (old.records) {
+      NG.records = old.records;
+      (NG.records.seasons || []).forEach(s => {
+        ['champ', 'champ2', 'runnerUp', 'cup', 's8', 'ko'].forEach(f => { if (s[f] != null) s[f] = mapId(s[f]); });
+        if (Array.isArray(s.topEight)) s.topEight = s.topEight.map(mapId);
+        if (s.awards) Object.keys(s.awards).forEach(k => { const a = s.awards[k]; if (a && a.clubId != null) a.clubId = mapId(a.clubId); });
+      });
+    }
+    if (old.rankHist) { NG.rankHist = old.rankHist; NG.rankHist.forEach(h => { if (h.map) { const mm_ = {}; Object.keys(h.map).forEach(k => { mm_[mapId(k)] = h.map[k]; }); h.map = mm_; } }); }
+    if (old.scoutBoard) { NG.scoutBoard = old.scoutBoard; Object.keys(NG.scoutBoard).forEach(k => { const r = NG.scoutBoard[k]; if (r && r.club != null) r.club = mapId(r.club); }); }
+    if (old.bth) {
+      NG.bth = old.bth;
+      (NG.bth.posts || []).forEach(p => { if (p.tid != null) p.tid = mapId(p.tid); });
+      Object.values(NG.bth.users || {}).forEach(u => { if (u.club != null) u.club = mapId(u.club); });
+    }
+    if (old.euroQual) { const L = {}; Object.keys(old.euroQual.lists || {}).forEach(k => { L[k] = old.euroQual.lists[k].map(mapId); }); NG.euroQual = { season: old.euroQual.season, lists: L }; }
+    NG.euroHolder = mapId(old.euroHolder);
+    NG.recBookBy = Object.assign({}, old.recBookBy); NG.recBookBy[oldCC] = old.recBook;
+    if (NG.recBookBy[NG.cc]) { NG.recBook = NG.recBookBy[NG.cc]; NG.recInit = true; }
+    ['cafHistory', 'confedHistory', 'afconHistory', 'ekcHistory', 'eccHistory'].forEach(k => { if (old.africa && old.africa[k]) NG.africa[k] = old.africa[k]; });
+    if (typeof ocCC !== 'undefined') { ocCC = null; ocPick = null; }
+  } catch (e) { console.error('carry', e); }
   const m = Object.assign({}, prev, { wage, contractEnd: season + years - 1, renewal: null, lastWage: null });
   m.clubs = (prev.clubs || []).concat([{ id: idx, from: season, n: tn }]);
   NG.manager = m; NG.jobless = false; NG.board = 55; NG.boardFired = false; NG.liveMode = old.liveMode !== false;
@@ -4067,7 +4156,7 @@ function sigTextFor(name) {
   #modal.ctrNeg header{border-bottom-color:#1ba5ea!important}`;
   document.head.appendChild(st);
 })();
-function ctrDateStr(iso) {   const d = new Date(iso + 'T12:00:00Z');   return `${String(d.getUTCDate()).padStart(2, '0')} ${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCFullYear()}`; } function openContractOffer(cfg) {   if (G && G.manager && cfg.team && (cfg.heading === 'Contract Offer' || cfg.heading === 'Contract Extension')) return jobNegotiation(cfg);   return openContractOfferOld(cfg); } function ctrCardRaw(cfg) {   ctrInjectStyle();   const old = document.querySelector('.ctrScrim'); if (old) old.remove();   let selected = cfg.defaultKey || (cfg.options[0] && cfg.options[0].key);   const scrim = document.createElement('div');   scrim.className = 'ctrScrim';   scrim.innerHTML = `<div class="ctrCard"><i class="ctrCorner tl"></i><i class="ctrCorner tr"></i><i class="ctrCorner bl"></i><i class="ctrCorner br"></i>     <div class="ctrInner">       <div class="ctrHead">         ${crestHTML(cfg.team, 40)}         <h2>${esc(cfg.heading)}</h2>         <div class="ctrDate">${ctrDateStr(cfg.dateISO)}</div>       </div>       <div class="ctrBody">${cfg.paragraphs.map(p => `<p>${p}</p>`).join('')}</div>       <div class="ctrOpts">${cfg.options.map(o => `<label class="ctrOpt" data-k="${o.key}"><i class="dot"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" fill="none" stroke="#06240f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></i>${esc(o.label)}</label>`).join('')}</div>       <div class="ctrConfirmWrap"><button class="ctrConfirm">${esc(cfg.confirmLabel || 'Confirm')}</button></div>       <div class="ctrSign">         <div class="ctrSignCol"><div class="ctrSigBox"><svg viewBox="0 0 115 32"><path class="ctrSigPath" d="${CTR_SIG_CEO}"/></svg></div><div class="line"></div><span>Chief Executive</span></div>         <div class="ctrSignCol"><div class="ctrSigBox"><svg viewBox="0 0 115 32">${sigTextFor(cfg.mgrName || (G && G.manager && G.manager.name))}</svg></div><div class="line"></div><span>Manager</span></div>       </div>     </div></div>`;   document.body.appendChild(scrim);   const rows = scrim.querySelectorAll('.ctrOpt');   const paint = () => rows.forEach(r => r.classList.toggle('on', r.dataset.k === selected));   paint();   rows.forEach(r => r.onclick = () => { selected = r.dataset.k; paint(); });   const confirmBtn = scrim.querySelector('.ctrConfirm');   confirmBtn.onclick = () => {     confirmBtn.disabled = true;     if (selected === 'accept') {       const sig = scrim.querySelector('#ctrMgrSig');       sig.style.opacity = '1'; sig.classList.add('draw');       setTimeout(() => { scrim.remove(); cfg.onChoice('accept'); }, 1250);     } else {       scrim.remove(); cfg.onChoice(selected);     }   }; } function jobFitChance(G, target) {   const my = G.teams[G.myTeam], rep = G.manager.rep || 40;   if (target.id === G.myTeam) return 0;   const last = my.history && my.history.length ? my.history[my.history.length - 1] : null;   const doingWell = last && last.pos <= boardTargetFor(my);   const cap = (rep / 100) * 7 + 3.2 + (doingWell ? 0.7 : 0);   if (target.rep <= my.rep + 0.4) return 0.85;   if (target.rep > cap) {     const over = target.rep - cap;     return clamp(0.12 - over * 0.05, 0.01, 0.12);   }   const span = Math.max(0.1, cap - (my.rep + 0.4));   const pos = (target.rep - (my.rep + 0.4)) / span;   return clamp(0.75 - pos * 0.55, 0.15, 0.75); } function jobFitLabel(c) {   if (c >= 0.6) return { txt: 'Well within your reach', cls: 'xi' };   if (c >= 0.3) return { txt: 'A realistic step up', cls: '' };   if (c >= 0.12) return { txt: 'A big stretch', cls: 'out' };   return { txt: 'Extremely unlikely', cls: 'inj' }; } function applyForJob(G, id) {   const my = G.teams[G.myTeam], target = G.teams[id];   if (id === G.myTeam) return { ok: false, msg: `You already manage ${target.n}.` };   if (G.lastApplyRound === G.round) return { ok: false, msg: `You've only just gone for a job — wait until next matchday to try again.` };   G.lastApplyRound = G.round;   const chance = jobFitChance(G, target);   if (rnd() > chance) {     const gap = target.rep - my.rep;     const msg = gap > 2.5       ? `${target.n} don't think you're ready for a club of their size yet — build your reputation and try again later.`       : `${target.n} thank you for your interest but appoint another candidate.`;     return { ok: false, msg };   }   const wage = Math.round(target.rep * 1.3 * 10) / 10;   return { ok: true, id, wage, msg: `${target.n} appoint you as their new manager.` }; } /* ---------------- manager careers: contracts, vacancies, unemployment ---------------- */ const JOBLESS_BLOCKED = ['squad', 'tactics', 'youth', 'training', 'transfers', 'club', 'finances', 'commercial']; function mgrWage(t, mult) {   const rep = G.manager.rep || 40;   const club = Math.max(0.3, t.rep * 1.1);   return Math.max(0.25, Math.round(club * (0.7 + rep / 100 * 0.7) * (mult || 1) * 100) / 100); } function ensureMgr(G) {   const m = G.manager;   if (m.contractEnd == null && !G.jobless) m.contractEnd = G.season + 2;   G.vac = G.vac || []; G.vacApps = G.vacApps || []; G.vacOffers = G.vacOffers || []; } function newAiMgr(t) {   const nat = pick(HOME_NAT === 'GB' ? ['GB', 'GB', 'GB', 'GB', 'GB', 'GB', 'IE', 'FR', 'ES', 'PT', 'NL', 'DE', 'IT', 'DK', 'NO'] : ['ZA', 'ZA', 'ZA', 'ZA', 'ZW', 'NG', 'GH', 'CM', 'ZM', 'MW']);   const nm = personName(nat);   return { name: nm.first + ' ' + nm.last, nat }; } function clubMgr(t) {   if (!t.mgr) t.mgr = Object.assign(newAiMgr(t), { since: G.season - rint(0, 3), apptDay: -999 });   return t.mgr; } function mgrReasonText(G, t, kind) {   const m = clubMgr(t).name;   const rows = sortTable(G, t.tier), size = rows.length;   const pos = rows.findIndex(r => r.id === t.id) + 1, r = rows.find(x => x.id === t.id) || { p: 0, w: 0 };   const exp = G.teams.filter(x => x.tier === t.tier).sort((a, b) => teamOverall(b) - teamOverall(a)).findIndex(x => x.id === t.id) + 1;   if (kind === 'sacked') {     if (pos >= size - 2) return `${m} was sacked with ${t.s} ${ordinal(pos)} in the ${tierShortOf(t)}, deep in the relegation fight.`;     if (pos - exp >= 4) return `${m} was sacked after a poor run. ${t.s} have the ${ordinal(exp)}-best squad in the ${tierShortOf(t)} but sit ${ordinal(pos)}.`;     if (r.p >= 6 && r.w <= 2) return `${m} was sacked after just ${r.w} win${r.w === 1 ? '' : 's'} in ${r.p} games.`;     return pick([`The board lost patience with ${m} after a run of bad results.`, `${m} was sacked following a string of poor performances at home.`, `${m} was dismissed after the board lost faith in his tactics.`]);   }   if (kind === 'resigned') return pick([`${m} resigned after a row with the board over transfer funds.`, `${m} quit, saying the club lacked ambition.`, `${m} resigned after clashing with senior players.`]);   if (kind === 'left') return pick([`${m} left to join a club abroad.`, `${m} was poached by a bigger club.`, `${m} left to take the national team job.`]);   if (kind === 'health') return `${m} stepped down for health reasons.`;   if (kind === 'retired') return `${m} retired from management.`;   if (kind === 'mutual') return `${m} left by mutual consent after a poor start.`;   if (kind === 'contract') return `${m}'s contract ran out and was not renewed.`;   return `${m} is no longer the manager.`; } function openVacancy(G, tid, kind, text, opts) {   ensureMgr(G);   if (G.vac.some(v => v.tid === tid)) return null;   const t = G.teams[tid];   const v = { tid, kind, text, season: G.season, round: G.round, day: G.curDay || 0, hireIn: rint(3, 7), blocked: !!(opts && opts.blocked) };   G.vac.push(v);   news(G, 'career', `${t.n} are looking for a new manager. ${text}`);   return v; } function fillVacancy(G, v) {   const t = G.teams[v.tid];   const nm = newAiMgr(t);   t.mgr = Object.assign(nm, { since: G.season, apptDay: G.curDay || 0 });   news(G, 'career', `${t.n} appoint ${nm.name} as their new manager.`);   G.vac = G.vac.filter(x => x !== v);   G.vacOffers = G.vacOffers.filter(o => o.tid !== v.tid);   G.vacApps.forEach(a => {     if (a.tid === v.tid && a.status === 'pending') {       a.status = 'filled';       mail(G, { cat: 'career', from: `${t.n} Board`, subject: `Position filled: ${t.n}`, body: [`Thank you for applying. ${t.n} have appointed ${nm.name} as their new manager.`] });     }   }); } function applyChance(G, v) {   const t = G.teams[v.tid], rep = G.manager.rep || 40;   let c = 0.55 + (rep - (10 + t.rep * 5.5)) / 45;   if (G.jobless) c += 0.12;   if (v.kind === 'sacked') { const rows = sortTable(G, t.tier); if (rows.findIndex(r => r.id === t.id) + 1 >= rows.length - 3) c += 0.08; }   return clamp(c, 0.04, 0.95); } function applyHint(c) { return c >= 0.7 ? ['Strong candidate', '#3ddc84'] : c >= 0.4 ? ['Decent chance', '#f2b928'] : c >= 0.2 ? ['Long shot', '#ff9f43'] : ['Unlikely', '#ff6b6b']; } function applyVacancy(G, tid) {   ensureMgr(G);   const v = G.vac.find(x => x.tid === tid);   if (!v) return { ok: false, msg: 'That job has been filled.' };   if (v.blocked) return { ok: false, msg: `${G.teams[tid].n} will not consider you right now.` };   if (G.vacApps.some(a => a.tid === tid && a.status === 'pending')) return { ok: false, msg: 'You have already applied.' };   if (v.rejectedMe) return { ok: false, msg: 'They have already turned you down for this job.' };   G.vacApps.push({ tid, due: G.round + 1, status: 'pending', round: G.round });   return { ok: true, msg: `Application sent to ${G.teams[tid].n}. Expect an answer after the next matchday.` }; } function resolveApp(G, a) {   const t = G.teams[a.tid], v = G.vac.find(x => x.tid === a.tid);   if (!v) { a.status = 'filled'; return; }   if (v.hold) { a.status = 'rejected'; mail(G, { cat: 'career', from: `${t.n} Board`, subject: `Application update: ${t.n}`, body: ['The board are already in talks with another candidate. Thank you for your interest.'] }); return; }   if (rnd() < applyChance(G, v)) {     a.status = 'offer'; v.hold = true;     G.vacOffers.push({ tid: t.id, wage: mgrWage(t, G.jobless ? 0.95 : 1.05), years: 2, expires: G.round + 3 });     mail(G, { cat: 'career', from: `${t.n} Board`, flag: true, subject: `Job offer: ${t.n}`,       body: [`Following your application, ${t.n} would like to appoint you as their new manager.`, 'The offer is open for three matchdays. You can negotiate your terms from Manager › Job offers.'] });   } else {     a.status = 'rejected'; v.rejectedMe = true;     mail(G, { cat: 'career', from: `${t.n} Board`, subject: `Application unsuccessful: ${t.n}`,       body: [`Thank you for applying for the ${t.n} job. ${pick(['They have gone for a more experienced manager.', 'The board wanted someone with a better record at this level.', 'They have decided to look at other candidates.', 'They felt another candidate was a better fit.'])}`] });   } } function ensureMinVacancies(G, n) {   ensureMgr(G);   let guard = 0;   while (G.vac.length < n && guard++ < 40) {     const pool = G.teams.filter(x => x.id !== G.myTeam && !G.vac.some(v => v.tid === x.id));     if (!pool.length) break;     const t = pick(pool), kind = pick(['sacked', 'resigned', 'left', 'contract', 'mutual', 'health']);     openVacancy(G, t.id, kind, mgrReasonText(G, t, kind));   } } function newVacancies(G) {   const tierRank = {};   [0, 1, 2, 3, 4].forEach(ti => { G.teams.filter(x => x.tier === ti).sort((a, b) => teamOverall(b) - teamOverall(a)).forEach((x, i) => { tierRank[x.id] = i + 1; }); });   G.teams.forEach(t => {     if (G.vac.length >= 8 || t.id === G.myTeam || G.vac.some(v => v.tid === t.id)) return;     const m = clubMgr(t);     if ((G.curDay || 0) - (m.apptDay || -999) < 60) return;     const rows = sortTable(G, t.tier), pos = rows.findIndex(r => r.id === t.id) + 1;     const poor = pos - tierRank[t.id];     const pSack = 0.0012 + Math.max(0, poor - 2) * 0.0035 + (pos > rows.length - 3 ? 0.008 : 0);     if (rnd() < pSack) { openVacancy(G, t.id, 'sacked', mgrReasonText(G, t, 'sacked')); return; }     const r = rnd();     if (r < 0.0014) openVacancy(G, t.id, 'resigned', mgrReasonText(G, t, 'resigned'));     else if (r < 0.0026) openVacancy(G, t.id, 'left', mgrReasonText(G, t, 'left'));     else if (r < 0.0032) openVacancy(G, t.id, 'health', mgrReasonText(G, t, 'health'));     else if (r < 0.0036) openVacancy(G, t.id, 'mutual', mgrReasonText(G, t, 'mutual'));   }); } function managerTick(G) {   ensureMgr(G);   G.vacApps.filter(a => a.status === 'pending' && G.round >= a.due).forEach(a => resolveApp(G, a));   G.vacOffers = G.vacOffers.filter(o => {     if (o.expires >= G.round) return true;     const v = G.vac.find(x => x.tid === o.tid); if (v) v.hold = false;     mail(G, { cat: 'career', from: `${G.teams[o.tid].n} Board`, subject: `Offer withdrawn: ${G.teams[o.tid].n}`, body: ['You took too long to respond, so the board have withdrawn their offer.'] });     return false;   });   G.vac.slice().forEach(v => { if (v.hold) return; v.hireIn--; if (v.hireIn <= 0) fillVacancy(G, v); });   if ((G.curDay || 0) >= 91 || G.jobless) newVacancies(G);   if (G.jobless) ensureMinVacancies(G, 3);   else renewalTick(G); } /* ----- the manager's own contract ----- */ function renewalTick(G) {   const m = G.manager;   if (m.contractEnd == null || G.season < m.contractEnd || G.round < 14) return;   if (m.renewal && m.renewal.season === G.season) { if (m.renewal.status === 'declined') reconsiderRenewal(G, false); return; }   decideRenewal(G); } function reconsiderRenewal(G, final) {   const m = G.manager, t = me(), rn = m.renewal;   if (!rn || rn.status !== 'declined' || rn.season !== G.season) return;   if (!final && G.round - (rn.rc == null ? 14 : rn.rc) < 5) return;   rn.rc = G.round;   const pos = posOfTeam(G, t.id), target = boardTargetFor(t), board = G.board != null ? G.board : 62;   const p = renewalChance(board, target, pos);   const win = p >= 1 || (final ? (pos <= target && rnd() < p) : (p >= 0.55 && rnd() < (p - 0.4) * 0.6));   if (!win) return;   m.renewal = { season: G.season, status: 'offered', wage: mgrWage(t, 1.08), years: 3 };   mail(G, { cat: 'career', from: 'Board of Directors', flag: true, subject: 'Contract talks: the board have changed their minds',     body: [`After the recent results, the board at ${t.n} have reconsidered and now want to keep you.`, `Their offer is ${money(m.renewal.wage)} a season for ${m.renewal.years} years. You can negotiate from Manager › Contract.`] }); } /* ---- ask the board to reconsider a refused renewal: available again every 3 months ---- */
+function ctrDateStr(iso) {   const d = new Date(iso + 'T12:00:00Z');   return `${String(d.getUTCDate()).padStart(2, '0')} ${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCFullYear()}`; } function openContractOffer(cfg) {   if (G && G.manager && cfg.team && (cfg.heading === 'Contract Offer' || cfg.heading === 'Contract Extension')) return jobNegotiation(cfg);   return openContractOfferOld(cfg); } function ctrCardRaw(cfg) {   ctrInjectStyle();   const old = document.querySelector('.ctrScrim'); if (old) old.remove();   let selected = cfg.defaultKey || (cfg.options[0] && cfg.options[0].key);   const scrim = document.createElement('div');   scrim.className = 'ctrScrim';   scrim.innerHTML = `<div class="ctrCard"><i class="ctrCorner tl"></i><i class="ctrCorner tr"></i><i class="ctrCorner bl"></i><i class="ctrCorner br"></i>     <div class="ctrInner">       <div class="ctrHead">         ${crestHTML(cfg.team, 40)}         <h2>${esc(cfg.heading)}</h2>         <div class="ctrDate">${ctrDateStr(cfg.dateISO)}</div>       </div>       <div class="ctrBody">${cfg.paragraphs.map(p => `<p>${p}</p>`).join('')}</div>       <div class="ctrOpts">${cfg.options.map(o => `<label class="ctrOpt" data-k="${o.key}"><i class="dot"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" fill="none" stroke="#06240f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></i>${esc(o.label)}</label>`).join('')}</div>       <div class="ctrConfirmWrap"><button class="ctrConfirm">${esc(cfg.confirmLabel || 'Confirm')}</button></div>       <div class="ctrSign">         <div class="ctrSignCol"><div class="ctrSigBox"><svg viewBox="0 0 115 32"><path class="ctrSigPath" d="${CTR_SIG_CEO}"/></svg></div><div class="line"></div><span>Chief Executive</span></div>         <div class="ctrSignCol"><div class="ctrSigBox"><svg viewBox="0 0 115 32">${sigTextFor(cfg.mgrName || (G && G.manager && G.manager.name))}</svg></div><div class="line"></div><span>Manager</span></div>       </div>     </div></div>`;   document.body.appendChild(scrim);   const rows = scrim.querySelectorAll('.ctrOpt');   const paint = () => rows.forEach(r => r.classList.toggle('on', r.dataset.k === selected));   paint();   rows.forEach(r => r.onclick = () => { selected = r.dataset.k; paint(); });   const confirmBtn = scrim.querySelector('.ctrConfirm');   confirmBtn.onclick = () => {     confirmBtn.disabled = true;     if (selected === 'accept') {       const sig = scrim.querySelector('#ctrMgrSig');       sig.style.opacity = '1'; sig.classList.add('draw');       setTimeout(() => { scrim.remove(); cfg.onChoice('accept'); }, 1250);     } else {       scrim.remove(); cfg.onChoice(selected);     }   }; } function jobFitChance(G, target) {   const my = G.teams[G.myTeam], rep = G.manager.rep || 40;   if (target.id === G.myTeam) return 0;   const last = my.history && my.history.length ? my.history[my.history.length - 1] : null;   const doingWell = last && last.pos <= boardTargetFor(my);   const cap = (rep / 100) * 7 + 3.2 + (doingWell ? 0.7 : 0);   if (target.rep <= my.rep + 0.4) return 0.85;   if (target.rep > cap) {     const over = target.rep - cap;     return clamp(0.12 - over * 0.05, 0.01, 0.12);   }   const span = Math.max(0.1, cap - (my.rep + 0.4));   const pos = (target.rep - (my.rep + 0.4)) / span;   return clamp(0.75 - pos * 0.55, 0.15, 0.75); } function jobFitLabel(c) {   if (c >= 0.6) return { txt: 'Well within your reach', cls: 'xi' };   if (c >= 0.3) return { txt: 'A realistic step up', cls: '' };   if (c >= 0.12) return { txt: 'A big stretch', cls: 'out' };   return { txt: 'Extremely unlikely', cls: 'inj' }; } function applyForJob(G, id) {   const my = G.teams[G.myTeam], target = G.teams[id];   if (typeof id === 'string' && /^ov\d+$/.test(id) && G.round > 0) return { ok: false, msg: `${target.n} only hire between seasons. Try again in the summer.` };   if (id === G.myTeam) return { ok: false, msg: `You already manage ${target.n}.` };   if (G.lastApplyRound === G.round) return { ok: false, msg: `You've only just gone for a job — wait until next matchday to try again.` };   G.lastApplyRound = G.round;   const chance = jobFitChance(G, target);   if (rnd() > chance) {     const gap = target.rep - my.rep;     const msg = gap > 2.5       ? `${target.n} don't think you're ready for a club of their size yet — build your reputation and try again later.`       : `${target.n} thank you for your interest but appoint another candidate.`;     return { ok: false, msg };   }   const wage = Math.round(target.rep * 1.3 * 10) / 10;   return { ok: true, id, wage, msg: `${target.n} appoint you as their new manager.` }; } /* ---------------- manager careers: contracts, vacancies, unemployment ---------------- */ const JOBLESS_BLOCKED = ['squad', 'tactics', 'youth', 'training', 'transfers', 'club', 'finances', 'commercial']; function mgrWage(t, mult) {   const rep = G.manager.rep || 40;   const club = Math.max(0.3, t.rep * 1.1);   return Math.max(0.25, Math.round(club * (0.7 + rep / 100 * 0.7) * (mult || 1) * 100) / 100); } function ensureMgr(G) {   const m = G.manager;   if (m.contractEnd == null && !G.jobless) m.contractEnd = G.season + 2;   G.vac = G.vac || []; G.vacApps = G.vacApps || []; G.vacOffers = G.vacOffers || []; } function newAiMgr(t) {   const nat = pick(HOME_NAT === 'GB' ? ['GB', 'GB', 'GB', 'GB', 'GB', 'GB', 'IE', 'FR', 'ES', 'PT', 'NL', 'DE', 'IT', 'DK', 'NO'] : ['ZA', 'ZA', 'ZA', 'ZA', 'ZW', 'NG', 'GH', 'CM', 'ZM', 'MW']);   const nm = personName(nat);   return { name: nm.first + ' ' + nm.last, nat }; } function clubMgr(t) {   if (!t.mgr) t.mgr = Object.assign(newAiMgr(t), { since: G.season - rint(0, 3), apptDay: -999 });   return t.mgr; } function mgrReasonText(G, t, kind) {   const m = clubMgr(t).name;   const rows = sortTable(G, t.tier), size = rows.length;   const pos = rows.findIndex(r => r.id === t.id) + 1, r = rows.find(x => x.id === t.id) || { p: 0, w: 0 };   const exp = G.teams.filter(x => x.tier === t.tier).sort((a, b) => teamOverall(b) - teamOverall(a)).findIndex(x => x.id === t.id) + 1;   if (kind === 'sacked') {     if (pos >= size - 2) return `${m} was sacked with ${t.s} ${ordinal(pos)} in the ${tierShortOf(t)}, deep in the relegation fight.`;     if (pos - exp >= 4) return `${m} was sacked after a poor run. ${t.s} have the ${ordinal(exp)}-best squad in the ${tierShortOf(t)} but sit ${ordinal(pos)}.`;     if (r.p >= 6 && r.w <= 2) return `${m} was sacked after just ${r.w} win${r.w === 1 ? '' : 's'} in ${r.p} games.`;     return pick([`The board lost patience with ${m} after a run of bad results.`, `${m} was sacked following a string of poor performances at home.`, `${m} was dismissed after the board lost faith in his tactics.`]);   }   if (kind === 'resigned') return pick([`${m} resigned after a row with the board over transfer funds.`, `${m} quit, saying the club lacked ambition.`, `${m} resigned after clashing with senior players.`]);   if (kind === 'left') return pick([`${m} left to join a club abroad.`, `${m} was poached by a bigger club.`, `${m} left to take the national team job.`]);   if (kind === 'health') return `${m} stepped down for health reasons.`;   if (kind === 'retired') return `${m} retired from management.`;   if (kind === 'mutual') return `${m} left by mutual consent after a poor start.`;   if (kind === 'contract') return `${m}'s contract ran out and was not renewed.`;   return `${m} is no longer the manager.`; } function openVacancy(G, tid, kind, text, opts) {   ensureMgr(G);   if (G.vac.some(v => v.tid === tid)) return null;   const t = G.teams[tid];   const v = { tid, kind, text, season: G.season, round: G.round, day: G.curDay || 0, hireIn: rint(3, 7), blocked: !!(opts && opts.blocked) };   G.vac.push(v);   news(G, 'career', `${t.n} are looking for a new manager. ${text}`);   return v; } function fillVacancy(G, v) {   const t = G.teams[v.tid];   const nm = newAiMgr(t);   t.mgr = Object.assign(nm, { since: G.season, apptDay: G.curDay || 0 });   news(G, 'career', `${t.n} appoint ${nm.name} as their new manager.`);   G.vac = G.vac.filter(x => x !== v);   G.vacOffers = G.vacOffers.filter(o => o.tid !== v.tid);   G.vacApps.forEach(a => {     if (a.tid === v.tid && a.status === 'pending') {       a.status = 'filled';       mail(G, { cat: 'career', from: `${t.n} Board`, subject: `Position filled: ${t.n}`, body: [`Thank you for applying. ${t.n} have appointed ${nm.name} as their new manager.`] });     }   }); } function applyChance(G, v) {   const t = G.teams[v.tid], rep = G.manager.rep || 40;   let c = 0.55 + (rep - (10 + t.rep * 5.5)) / 45;   if (G.jobless) c += 0.12;   if (v.kind === 'sacked') { const rows = sortTable(G, t.tier); if (rows.findIndex(r => r.id === t.id) + 1 >= rows.length - 3) c += 0.08; }   return clamp(c, 0.04, 0.95); } function applyHint(c) { return c >= 0.7 ? ['Strong candidate', '#3ddc84'] : c >= 0.4 ? ['Decent chance', '#f2b928'] : c >= 0.2 ? ['Long shot', '#ff9f43'] : ['Unlikely', '#ff6b6b']; } function applyVacancy(G, tid) {   ensureMgr(G);   const v = G.vac.find(x => x.tid === tid);   if (!v) return { ok: false, msg: 'That job has been filled.' };   if (v.blocked) return { ok: false, msg: `${G.teams[tid].n} will not consider you right now.` };   if (G.vacApps.some(a => a.tid === tid && a.status === 'pending')) return { ok: false, msg: 'You have already applied.' };   if (v.rejectedMe) return { ok: false, msg: 'They have already turned you down for this job.' };   G.vacApps.push({ tid, due: G.round + 1, status: 'pending', round: G.round });   return { ok: true, msg: `Application sent to ${G.teams[tid].n}. Expect an answer after the next matchday.` }; } function resolveApp(G, a) {   const t = G.teams[a.tid], v = G.vac.find(x => x.tid === a.tid);   if (!v) { a.status = 'filled'; return; }   if (v.hold) { a.status = 'rejected'; mail(G, { cat: 'career', from: `${t.n} Board`, subject: `Application update: ${t.n}`, body: ['The board are already in talks with another candidate. Thank you for your interest.'] }); return; }   if (rnd() < applyChance(G, v)) {     a.status = 'offer'; v.hold = true;     G.vacOffers.push({ tid: t.id, wage: mgrWage(t, G.jobless ? 0.95 : 1.05), years: 2, expires: G.round + 3 });     mail(G, { cat: 'career', from: `${t.n} Board`, flag: true, subject: `Job offer: ${t.n}`,       body: [`Following your application, ${t.n} would like to appoint you as their new manager.`, 'The offer is open for three matchdays. You can negotiate your terms from Manager › Job offers.'] });   } else {     a.status = 'rejected'; v.rejectedMe = true;     mail(G, { cat: 'career', from: `${t.n} Board`, subject: `Application unsuccessful: ${t.n}`,       body: [`Thank you for applying for the ${t.n} job. ${pick(['They have gone for a more experienced manager.', 'The board wanted someone with a better record at this level.', 'They have decided to look at other candidates.', 'They felt another candidate was a better fit.'])}`] });   } } function ensureMinVacancies(G, n) {   ensureMgr(G);   let guard = 0;   while (G.vac.length < n && guard++ < 40) {     const pool = G.teams.filter(x => x.id !== G.myTeam && !G.vac.some(v => v.tid === x.id));     if (!pool.length) break;     const t = pick(pool), kind = pick(['sacked', 'resigned', 'left', 'contract', 'mutual', 'health']);     openVacancy(G, t.id, kind, mgrReasonText(G, t, kind));   } } function newVacancies(G) {   const tierRank = {};   [0, 1, 2, 3, 4].forEach(ti => { G.teams.filter(x => x.tier === ti).sort((a, b) => teamOverall(b) - teamOverall(a)).forEach((x, i) => { tierRank[x.id] = i + 1; }); });   G.teams.forEach(t => {     if (G.vac.length >= 8 || t.id === G.myTeam || G.vac.some(v => v.tid === t.id)) return;     const m = clubMgr(t);     if ((G.curDay || 0) - (m.apptDay || -999) < 60) return;     const rows = sortTable(G, t.tier), pos = rows.findIndex(r => r.id === t.id) + 1;     const poor = pos - tierRank[t.id];     const pSack = 0.0012 + Math.max(0, poor - 2) * 0.0035 + (pos > rows.length - 3 ? 0.008 : 0);     if (rnd() < pSack) { openVacancy(G, t.id, 'sacked', mgrReasonText(G, t, 'sacked')); return; }     const r = rnd();     if (r < 0.0014) openVacancy(G, t.id, 'resigned', mgrReasonText(G, t, 'resigned'));     else if (r < 0.0026) openVacancy(G, t.id, 'left', mgrReasonText(G, t, 'left'));     else if (r < 0.0032) openVacancy(G, t.id, 'health', mgrReasonText(G, t, 'health'));     else if (r < 0.0036) openVacancy(G, t.id, 'mutual', mgrReasonText(G, t, 'mutual'));   }); } function managerTick(G) {   ensureMgr(G);   G.vacApps.filter(a => a.status === 'pending' && G.round >= a.due).forEach(a => resolveApp(G, a));   G.vacOffers = G.vacOffers.filter(o => {     if (o.expires >= G.round) return true;     const v = G.vac.find(x => x.tid === o.tid); if (v) v.hold = false;     mail(G, { cat: 'career', from: `${G.teams[o.tid].n} Board`, subject: `Offer withdrawn: ${G.teams[o.tid].n}`, body: ['You took too long to respond, so the board have withdrawn their offer.'] });     return false;   });   G.vac.slice().forEach(v => { if (v.hold) return; v.hireIn--; if (v.hireIn <= 0) fillVacancy(G, v); });   if ((G.curDay || 0) >= 91 || G.jobless) newVacancies(G);   if (G.jobless) ensureMinVacancies(G, 3);   else renewalTick(G); } /* ----- the manager's own contract ----- */ function renewalTick(G) {   const m = G.manager;   if (m.contractEnd == null || G.season < m.contractEnd || G.round < 14) return;   if (m.renewal && m.renewal.season === G.season) { if (m.renewal.status === 'declined') reconsiderRenewal(G, false); return; }   decideRenewal(G); } function reconsiderRenewal(G, final) {   const m = G.manager, t = me(), rn = m.renewal;   if (!rn || rn.status !== 'declined' || rn.season !== G.season) return;   if (!final && G.round - (rn.rc == null ? 14 : rn.rc) < 5) return;   rn.rc = G.round;   const pos = posOfTeam(G, t.id), target = boardTargetFor(t), board = G.board != null ? G.board : 62;   const p = renewalChance(board, target, pos);   const win = p >= 1 || (final ? (pos <= target && rnd() < p) : (p >= 0.55 && rnd() < (p - 0.4) * 0.6));   if (!win) return;   m.renewal = { season: G.season, status: 'offered', wage: mgrWage(t, 1.08), years: 3 };   mail(G, { cat: 'career', from: 'Board of Directors', flag: true, subject: 'Contract talks: the board have changed their minds',     body: [`After the recent results, the board at ${t.n} have reconsidered and now want to keep you.`, `Their offer is ${money(m.renewal.wage)} a season for ${m.renewal.years} years. You can negotiate from Manager › Contract.`] }); } /* ---- ask the board to reconsider a refused renewal: available again every 3 months ---- */
 function reconDaysLeft(rn) {
   const from = G.manager.reconAt || (rn && rn.at); if (!from) return 0;
   const diff = Math.floor((Date.parse(currentDateISO() + 'T12:00:00Z') - Date.parse(from + 'T12:00:00Z')) / 86400000);
@@ -4276,7 +4365,7 @@ function contractNegotiate(cfg, cb) {
   };
   draw();
 }
-  function jobNegotiationFancy(cfg) {   if (!window.__jnErr) { window.__jnErr = 1; window.addEventListener('error', e => { try { toastWarn('Error: ' + e.message); } catch (x) { } }); }   const t = cfg.team, ext = cfg.heading === 'Contract Extension';   const wage0 = cfg.wage != null ? cfg.wage : mgrWage(t, cfg.mult || 1);   const years0 = cfg.years || 2;   let offerW = wage0, tries = 3, note = '';   const old = document.querySelector('.jnScrim'); if (old) old.remove();   const sc = document.createElement('div'); sc.className = 'jnScrim'; document.body.appendChild(sc);   const done = (k, terms) => {     sc.remove();     if (k === 'accept') { signCeremony({ manager: true, team: t, wage: terms.wage, years: terms.years, ext }, () => { window.__jobTerms = { tid: t.id, wage: terms.wage, years: terms.years }; try { cfg.onChoice('accept', terms); } finally { window.__jobTerms = null; } }); }     else if (cfg.onChoice) cfg.onChoice('reject');   };   const draw = () => {     const lo = offerW * 0.8, hi = offerW * 1.5;     sc.innerHTML = `<div class="jnCard"><div class="jnHead">${crestHTML(t, 38)}<div><h3>${esc(cfg.heading)}</h3><small>${esc(t.n)} · ${tierShortOf(t)}</small></div><button class="jnX" aria-label="Close">×</button></div>       <div class="jnBody">         <p>${ext ? `${esc(t.n)} want to keep you.` : `${esc(t.n)} want you as their manager.`} Their offer: <b style="color:#fff">${money(offerW)}</b> a season for <b style="color:#fff">${years0} year${years0 === 1 ? '' : 's'}</b>.</p>         ${note ? `<p style="color:#f2b928">${esc(note)}</p>` : ''}         <label>Wage a season</label>         <input class="range" type="range" id="jnW" min="${lo.toFixed(2)}" max="${hi.toFixed(2)}" step="0.01" value="${offerW.toFixed(2)}">         <div class="jnVal"><span>Wage</span><b id="jnWV"></b></div>         <label>Contract length</label>         <input class="range" type="range" id="jnY" min="1" max="5" step="1" value="${years0}">         <div class="jnVal"><span>Years</span><b id="jnYV"></b></div>         <div class="jnBar"><i id="jnBar"></i></div>         <p id="jnOdds" style="margin:6px 0 0;font-size:13px;color:#8f98a2"></p>         <p style="margin:8px 0 0;font-size:12.5px;color:#6b737c">${tries} counter-offer${tries === 1 ? '' : 's'} left before they walk away.</p>       </div>       <div class="jnFoot"><button class="btn ghost sm" id="jnNo">Walk away</button><button class="btn ghost sm" id="jnAcc">Accept their offer</button><button class="btn sm" id="jnCtr">Counter-offer</button></div></div>`;     const wr = sc.querySelector('#jnW'), yr = sc.querySelector('#jnY');     const chance = (w, y) => {       let c = w <= offerW ? 1 : 1 - (w / offerW - 1) * 2.4;       c -= Math.max(0, y - years0) * 0.03; c += Math.max(0, years0 - y) * 0.02;       return clamp(c, 0.04, 0.97);     };     const upd = () => {       const w = +wr.value, y = +yr.value, c = chance(w, y);       sc.querySelector('#jnWV').textContent = money(w);       sc.querySelector('#jnYV').textContent = y + (y === 1 ? ' year' : ' years');       const bar = sc.querySelector('#jnBar'); bar.style.width = (c * 100).toFixed(0) + '%'; bar.style.background = c > 0.66 ? '#3ddc84' : c > 0.33 ? '#f2b928' : '#ff6b6b';       sc.querySelector('#jnOdds').textContent = c > 0.85 ? 'They should be happy with this.' : c > 0.5 ? 'They might go for it.' : c > 0.2 ? 'A stretch. They may refuse.' : 'Far too much. They will not pay this.';     };     wr.oninput = upd; yr.oninput = upd; try { upd(); } catch (e) { console.error(e); }     sc.querySelector('.jnX').onclick = () => done('reject');     sc.querySelector('#jnNo').onclick = () => done('reject');     sc.querySelector('#jnAcc').onclick = () => done('accept', { wage: Math.round(offerW * 100) / 100, years: years0 });     sc.querySelector('#jnCtr').onclick = () => {       const w = Math.round(+wr.value * 100) / 100, y = +yr.value;       if (Math.random() < chance(w, y)) { done('accept', { wage: w, years: y }); return; }       tries--;       if (tries <= 0) { sc.remove(); toastWarn(`${t.s} lose patience and withdraw their offer.`); if (cfg.onChoice) cfg.onChoice('reject'); return; }       offerW = Math.round(offerW * 1.02 * 100) / 100; note = `${t.s} stand firm but nudge their offer up slightly.`;       draw();     };   };   draw(); } function takeJob(G, id, wage, years) {   if (typeof id === 'string' && /^ov\d+$/.test(id)) return crossMove(id, wage, years);   ensureMgr(G);   const m = G.manager, oldClub = G.teams[G.myTeam], wasJobless = !!G.jobless;   const T = window.__jobTerms && window.__jobTerms.tid === id ? window.__jobTerms : null;   if (T) { wage = T.wage; years = T.years; }   if (wage == null) wage = mgrWage(G.teams[id]);   years = years || 3;   if (!wasJobless) {     const kind = G.boardFired ? 'sacked' : 'left';     const txt = G.boardFired ? `${m.name} was sacked.` : `${m.name} left to take charge of ${G.teams[id].n}.`;     openVacancy(G, oldClub.id, kind, txt, { blocked: true });   }   G.vac = G.vac.filter(v => v.tid !== id);   G.vacApps = []; G.vacOffers = [];   G.myTeam = id; G.jobless = false;   if (G._liveBefore != null) { G.liveMode = G._liveBefore; G._liveBefore = null; }   m.clubs = m.clubs || [];   m.clubs.push({ id, from: G.season, n: G.teams[id].n });   m.wage = wage; m.contractEnd = G.season + years - 1; m.renewal = null; m.lastWage = null;   const t = G.teams[id]; t.mgr = Object.assign(newAiMgr(t), { name: m.name, since: G.season, apptDay: G.curDay || 0 });   news(G, 'career', wasJobless ? `${m.name} is appointed manager of ${t.n}.` : `${m.name} leaves ${oldClub.s} to take charge of ${t.n}.`);   mail(G, { cat: 'career', from: 'Board of Directors', subject: `Welcome to ${t.n}`, body: [`You are the new manager of ${t.n}.`],     rows: [['Wage', money(wage) + ' a season'], ['Contract', `${years} year${years === 1 ? '' : 's'}`], ['Runs until', `June ${m.contractEnd + 1}`]] });   mail(G, { cat: 'personal', from: pick(['Mom', 'Dad', 'Your Brother', 'Your Sister', 'An Old Friend']), subject: 'Congratulations on the New Job!',     body: [`Just heard you're taking over at ${t.n} — congratulations!`, `We're all so proud of you. Go show them what you can do.`] }); } function takeJobOld(G, id, wage) {
+  function jobNegotiationFancy(cfg) {   if (!window.__jnErr) { window.__jnErr = 1; window.addEventListener('error', e => { try { toastWarn('Error: ' + e.message); } catch (x) { } }); }   const t = cfg.team, ext = cfg.heading === 'Contract Extension';   const wage0 = cfg.wage != null ? cfg.wage : mgrWage(t, cfg.mult || 1);   const years0 = cfg.years || 2;   let offerW = wage0, tries = 3, note = '';   const old = document.querySelector('.jnScrim'); if (old) old.remove();   const sc = document.createElement('div'); sc.className = 'jnScrim'; document.body.appendChild(sc);   const done = (k, terms) => {     sc.remove();     if (k === 'accept') { signCeremony({ manager: true, team: t, wage: terms.wage, years: terms.years, ext }, () => { window.__jobTerms = { tid: t.id, wage: terms.wage, years: terms.years }; try { cfg.onChoice('accept', terms); } finally { window.__jobTerms = null; } }); }     else if (cfg.onChoice) cfg.onChoice('reject');   };   const draw = () => {     const lo = offerW * 0.8, hi = offerW * 1.5;     sc.innerHTML = `<div class="jnCard"><div class="jnHead">${crestHTML(t, 38)}<div><h3>${esc(cfg.heading)}</h3><small>${esc(t.n)} · ${tierShortOf(t)}</small></div><button class="jnX" aria-label="Close">×</button></div>       <div class="jnBody">         <p>${ext ? `${esc(t.n)} want to keep you.` : `${esc(t.n)} want you as their manager.`} Their offer: <b style="color:#fff">${money(offerW)}</b> a season for <b style="color:#fff">${years0} year${years0 === 1 ? '' : 's'}</b>.</p>         ${note ? `<p style="color:#f2b928">${esc(note)}</p>` : ''}         <label>Wage a season</label>         <input class="range" type="range" id="jnW" min="${lo.toFixed(2)}" max="${hi.toFixed(2)}" step="0.01" value="${offerW.toFixed(2)}">         <div class="jnVal"><span>Wage</span><b id="jnWV"></b></div>         <label>Contract length</label>         <input class="range" type="range" id="jnY" min="1" max="5" step="1" value="${years0}">         <div class="jnVal"><span>Years</span><b id="jnYV"></b></div>         <div class="jnBar"><i id="jnBar"></i></div>         <p id="jnOdds" style="margin:6px 0 0;font-size:13px;color:#8f98a2"></p>         <p style="margin:8px 0 0;font-size:12.5px;color:#6b737c">${tries} counter-offer${tries === 1 ? '' : 's'} left before they walk away.</p>       </div>       <div class="jnFoot"><button class="btn ghost sm" id="jnNo">Walk away</button><button class="btn ghost sm" id="jnAcc">Accept their offer</button><button class="btn sm" id="jnCtr">Counter-offer</button></div></div>`;     const wr = sc.querySelector('#jnW'), yr = sc.querySelector('#jnY');     const chance = (w, y) => {       let c = w <= offerW ? 1 : 1 - (w / offerW - 1) * 2.4;       c -= Math.max(0, y - years0) * 0.03; c += Math.max(0, years0 - y) * 0.02;       return clamp(c, 0.04, 0.97);     };     const upd = () => {       const w = +wr.value, y = +yr.value, c = chance(w, y);       sc.querySelector('#jnWV').textContent = money(w);       sc.querySelector('#jnYV').textContent = y + (y === 1 ? ' year' : ' years');       const bar = sc.querySelector('#jnBar'); bar.style.width = (c * 100).toFixed(0) + '%'; bar.style.background = c > 0.66 ? '#3ddc84' : c > 0.33 ? '#f2b928' : '#ff6b6b';       sc.querySelector('#jnOdds').textContent = c > 0.85 ? 'They should be happy with this.' : c > 0.5 ? 'They might go for it.' : c > 0.2 ? 'A stretch. They may refuse.' : 'Far too much. They will not pay this.';     };     wr.oninput = upd; yr.oninput = upd; try { upd(); } catch (e) { console.error(e); }     sc.querySelector('.jnX').onclick = () => done('reject');     sc.querySelector('#jnNo').onclick = () => done('reject');     sc.querySelector('#jnAcc').onclick = () => done('accept', { wage: Math.round(offerW * 100) / 100, years: years0 });     sc.querySelector('#jnCtr').onclick = () => {       const w = Math.round(+wr.value * 100) / 100, y = +yr.value;       if (Math.random() < chance(w, y)) { done('accept', { wage: w, years: y }); return; }       tries--;       if (tries <= 0) { sc.remove(); toastWarn(`${t.s} lose patience and withdraw their offer.`); if (cfg.onChoice) cfg.onChoice('reject'); return; }       offerW = Math.round(offerW * 1.02 * 100) / 100; note = `${t.s} stand firm but nudge their offer up slightly.`;       draw();     };   };   draw(); } function takeJob(G, id, wage, years) {   if (typeof id === 'string' && /^ov\d+$/.test(id)) return crossMove(id, wage, years);   ensureMgr(G);   const m = G.manager, oldClub = G.teams[G.myTeam], wasJobless = !!G.jobless;   try { if (!wasJobless) { oldClub.lineup = autoLineup(oldClub); oldClub.subFor = {}; } } catch (e) { }   const T = window.__jobTerms && window.__jobTerms.tid === id ? window.__jobTerms : null;   if (T) { wage = T.wage; years = T.years; }   if (wage == null) wage = mgrWage(G.teams[id]);   years = years || 3;   if (!wasJobless) {     const kind = G.boardFired ? 'sacked' : 'left';     const txt = G.boardFired ? `${m.name} was sacked.` : `${m.name} left to take charge of ${G.teams[id].n}.`;     openVacancy(G, oldClub.id, kind, txt, { blocked: true });   }   G.vac = G.vac.filter(v => v.tid !== id);   G.vacApps = []; G.vacOffers = [];   G.myTeam = id; G.jobless = false;   if (G._liveBefore != null) { G.liveMode = G._liveBefore; G._liveBefore = null; }   m.clubs = m.clubs || [];   m.clubs.push({ id, from: G.season, n: G.teams[id].n });   m.wage = wage; m.contractEnd = G.season + years - 1; m.renewal = null; m.lastWage = null;   const t = G.teams[id]; t.mgr = Object.assign(newAiMgr(t), { name: m.name, since: G.season, apptDay: G.curDay || 0 });   news(G, 'career', wasJobless ? `${m.name} is appointed manager of ${t.n}.` : `${m.name} leaves ${oldClub.s} to take charge of ${t.n}.`);   mail(G, { cat: 'career', from: 'Board of Directors', subject: `Welcome to ${t.n}`, body: [`You are the new manager of ${t.n}.`],     rows: [['Wage', money(wage) + ' a season'], ['Contract', `${years} year${years === 1 ? '' : 's'}`], ['Runs until', `June ${m.contractEnd + 1}`]] });   mail(G, { cat: 'personal', from: pick(['Mom', 'Dad', 'Your Brother', 'Your Sister', 'An Old Friend']), subject: 'Congratulations on the New Job!',     body: [`Just heard you're taking over at ${t.n} — congratulations!`, `We're all so proud of you. Go show them what you can do.`] }); } function takeJobOld(G, id, wage) {
   const oldClub = G.teams[G.myTeam];
   G.myTeam = id;
   G.manager.clubs = G.manager.clubs || [];
@@ -4861,7 +4950,7 @@ const WORLD = {
 };
 function worldClubs(cc) { return cc === 'GB' ? CLUBS_EN : cc === 'ES' ? CLUBS_ES : CLUBS_SA; }
 function isEuro(cc) { return cc === 'GB' || cc === 'ES'; }
-const OV_MULT = { ZA: { GB: 2.5, ES: 2.3 }, GB: { ZA: 0.7, ES: 0.95 }, ES: { ZA: 0.7, GB: 1.05 } };
+const OV_MULT = { ZA: { GB: 1, ES: 1 }, GB: { ZA: 1, ES: 1 }, ES: { ZA: 1, GB: 1 } };   /* one price scale: value follows rating, age and potential, never the league */
 function ovCCs() { return WORLD_CCS.filter(c => c !== CUR_CC); }
 function ovMultFor(cc) { return ((OV_MULT[CUR_CC] || {})[cc]) || 1; }
 function ovGroups() { return G && G.ov ? (G.ov.ccs || [G.ov.cc]).map(cc => [cc, G.ov.teams.filter(t => t.cc === cc)]) : []; }
@@ -4913,6 +5002,8 @@ function initOverseas(G) {
 /* saves made before a country existed get its clubs added; nothing already in the save is touched */
 function ovEnsure(G) {
   const ov = G.ov; if (!ov) return;
+  /* older saves priced overseas players with a league multiplier: flatten it so price depends on rating, age and potential only */
+  G.teams.concat(ov.teams).forEach(t => { if (t.vm && t.vm !== 1) t.vm = 1; (t.squad || []).concat(t.youth || []).forEach(p => { if (p.vm && p.vm !== 1) { p.wage = Math.round(p.wage / p.vm * 100000) / 100000; } if (p.vm) p.vm = 1; p.value = valueOf(p); }); });
   if (!ov.ccs) ov.ccs = Array.from(new Set(ov.teams.map(t => t.cc)));
   ov.leagues.forEach(L => { if (!L.cc) L.cc = ov.cc; });
   ovCCs().forEach(cc => { if (!ov.ccs.includes(cc)) ovAddCountry(G, cc); });
@@ -5745,7 +5836,7 @@ function openGlobalSearch() {
   const pages = gsPages(), res = sc.querySelector('#gsRes'), inp = sc.querySelector('#gsQ');
   const go = {
     page: pg => { close(); if (pg.id === 'soundsettings') { openSoundModal(); return; } if (pg.id === 'regional' && typeof openRegionalModal === 'function') { openRegionalModal(); return; } if (pg.key) goSub(pg.id, pg.key); else goTo(pg.id); },
-    team: t => { close(); if (t.id === G.myTeam) { goTo('club'); return; } ocTier = t.tier; ocPick = t.id; goTo('otherclubs'); },
+    team: t => { close(); if (t.id === G.myTeam) { goTo('club'); return; } ocCC = t.ov ? t.cc : CUR_CC; ocTier = t.tier; ocPick = t.id; goTo('otherclubs'); },
     player: id => { close(); playerModal(id); }
   };
   const draw = () => {
@@ -5911,14 +6002,14 @@ const RESIGN_REASONS = [   { id: 'challenge', label: 'I want a new challenge' },
 $('#homeBtn').onclick = () => goTo('bathini');
 $('#backBtn').onclick = navBack;
 $('#fwdBtn').onclick = navFwd;
-$('#careerBtn').onclick = openCareerModal; function headerContinue() {   if (autoSimTimer) { stopAutoSim(); return; }   if (liveState) { goTo('match'); return; }   if (G.finished) { doEndSeason(); return; }   if (G.jobless) { startAutoSim(); return; }   if (isCupDayToday()) { goTo('match'); if (G.liveMode) startCupMatchday(); else { bumpCurDayForCup(G); const ties = playCupRound(G, false); afterCupMatchday({ cup: ties }); } return; }   if (isMatchdayToday()) { goTo('match'); if (G.liveMode) startLive(); else simRounds(1); return; }   startAutoSim(); } $('#contBtn').onclick = headerContinue;
+$('#careerBtn').onclick = openCareerModal; function headerContinue() {   if (autoSimTimer) { stopAutoSim(); return; }   if (liveState) { goTo('match'); return; }   if (G.finished) { if (seasonOverNow(G)) doEndSeason(); else startAutoSim(); return; }   if (G.jobless) { startAutoSim(); return; }   if (isCupDayToday()) { goTo('match'); if (G.liveMode) startCupMatchday(); else quickSimCupDay(); return; }   if (isMatchdayToday()) { goTo('match'); if (G.liveMode) startLive(); else simRounds(1); return; }   startAutoSim(); } $('#contBtn').onclick = headerContinue;
 window.addEventListener('beforeunload', e => {
   if (!G || leavingApp) return;
   save();
   if (liveState) { e.preventDefault(); e.returnValue = ''; return ''; }
 });
 
-function enterApp() { try { inboxTick(G); } catch (e) { } $('#landing').style.display = 'none'; $('#start').style.display = 'none'; $('#app').style.display = 'block'; $('#appLogo').src = 'mm-logo.jpg'; buildSideNav(); render(); window.scrollTo(0, 0); setTimeout(maybeStartGuide, 1200); } function renderTicker() {   const t = $('#tickerTrack'); if (!t || !G || !G.news) return;   const items = G.news.slice(0, 12);   if (!items.length) { $('#ticker').style.display = 'none'; return; }   $('#ticker').style.display = '';   const NEWS_ICON = { match: '⚽', transfer: '🔁', contract: '📝', youth: '🌱', retire: '👋', cup: '🏆', nation: '🌍', season: '📅', career: '📣' };   const html = items.map(n => `<span class="tk-item">${NEWS_ICON[n.kind] || '📰'} <b>MD${n.round + 1}</b>${esc(n.text)}</span>`).join('');   t.innerHTML = html + html; t.style.animationDuration = Math.max(150, Math.round(t.scrollWidth / 22)) + 's'; }
+function enterApp() { try { repairCareers(G); } catch (e) { console.error('careers', e); } try { inboxTick(G); } catch (e) { } $('#landing').style.display = 'none'; $('#start').style.display = 'none'; $('#app').style.display = 'block'; $('#appLogo').src = 'mm-logo.jpg'; buildSideNav(); render(); window.scrollTo(0, 0); setTimeout(maybeStartGuide, 1200); } function renderTicker() {   const t = $('#tickerTrack'); if (!t || !G || !G.news) return;   const items = G.news.slice(0, 12);   if (!items.length) { $('#ticker').style.display = 'none'; return; }   $('#ticker').style.display = '';   const NEWS_ICON = { match: '⚽', transfer: '🔁', contract: '📝', youth: '🌱', retire: '👋', cup: '🏆', nation: '🌍', season: '📅', career: '📣' };   const html = items.map(n => `<span class="tk-item">${NEWS_ICON[n.kind] || '📰'} <b>MD${n.round + 1}</b>${esc(n.text)}</span>`).join('');   t.innerHTML = html + html; t.style.animationDuration = Math.max(150, Math.round(t.scrollWidth / 22)) + 's'; }
 
 /* ---------------- save slots ---------------- */
 const LZ_MAX = 0xD000; function lzCompress(str) {   const b = new TextEncoder().encode(str);   if (!b.length) return '';   const codes = new Uint16Array(b.length + 1); let n = 0;   let dict = new Map(), next = 256, w = b[0];   for (let i = 1; i < b.length; i++) {     const c = b[i], key = w * 256 + c, hit = dict.get(key);     if (hit !== undefined) { w = hit; continue; }     codes[n++] = w;     if (next < LZ_MAX) dict.set(key, next++); else { dict = new Map(); next = 256; }     w = c;   }   codes[n++] = w;   let out = '';   for (let i = 0; i < n; i += 8192) out += String.fromCharCode.apply(null, codes.subarray(i, Math.min(n, i + 8192)));   return out; } function lzDecompress(s) {   const n = s.length; if (!n) return '';   const pre = new Int32Array(LZ_MAX), suf = new Uint8Array(LZ_MAX), len = new Int32Array(LZ_MAX);   let out = new Uint8Array(Math.max(1024, n * 16)), op = 0, next = 256, prev = -1;   const firstOf = c => { while (c >= 256) c = pre[c]; return c; };   const write = c => {     const l = c < 256 ? 1 : len[c];     if (op + l > out.length) { const g = new Uint8Array(Math.max(out.length * 2, op + l)); g.set(out); out = g; }     let p = op + l; op = p;     while (true) { if (c < 256) { out[--p] = c; break; } out[--p] = suf[c]; c = pre[c]; }   };   for (let i = 0; i < n; i++) {     const cur = s.charCodeAt(i);     if (prev === -1) { write(cur); prev = cur; continue; }     if (next === LZ_MAX) { next = 256; write(cur); prev = cur; continue; }     const first = cur < next ? firstOf(cur) : firstOf(prev);     pre[next] = prev; suf[next] = first; len[next] = (prev < 256 ? 1 : len[prev]) + 1; next++;     write(cur); prev = cur;   }   return new TextDecoder().decode(out.subarray(0, op)); } function packSave(obj) {   const json = JSON.stringify(obj);   try { return 'LZ1:' + lzCompress(json); } catch (e) { return json; } } function unpackSave(raw) {   if (!raw) return null;   try {     const d = JSON.parse((raw.slice(0, 4) === 'LZ1:' ? lzDecompress(raw.slice(4)) : raw).split('CAF Champions League').join('African Champions League').split('CAF Confederation Cup').join('African Football Cup').split('Confederation Cup').join('African Football Cup').split('Africa Cup of Nations').join('African Nations Cup'));     if (d && d.G && d.G.teams) { try { assignAiSponsors(d.G, true); } catch (e) { } try { syncStockKits(d.G); } catch (e) { } }     return (d && d.G && d.G.teams) ? d : null;   } catch (e) { return null; } } function saveMeta(k) {   try {     const t = G.teams[G.myTeam];     localStorage.setItem(SAVE_PREFIX + 'meta_' + k, JSON.stringify({ cc: G.cc || 'ZA', club: t.n, tier: t.tier, season: G.season, round: G.round, manager: (G.manager && G.manager.name) || 'Coach', trophies: t.trophies.length, saved: Date.now() }));   } catch (e) { } } function slotInfo(n) {   try {     const raw = localStorage.getItem(slotKey(n)); if (!raw) return null;     let m = null; try { m = JSON.parse(localStorage.getItem(SAVE_PREFIX + 'meta_' + n) || 'null'); } catch (e) { }     if (!m) {       const d = unpackSave(raw); if (!d) return null;       const t = d.G.teams[d.G.myTeam];       m = { cc: d.G.cc || 'ZA', club: t.n, tier: t.tier, season: d.G.season, round: d.G.round, manager: (d.G.manager && d.G.manager.name) || 'Coach', trophies: t.trophies.length, saved: d.saved || 0 };     }     return Object.assign({ n, name: getSlotName(n) }, m);   } catch (e) { return null; } } let _saveSoonTimer = null; function saveSoon() { if (_saveSoonTimer) return; _saveSoonTimer = setTimeout(() => { _saveSoonTimer = null; if (G) save(); }, 1500); } const STORE_QUOTA_KB = window.indexedDB ? 200000 : 5000; let _storeWarned = false; function storageGuard() {   if (_storeWarned || storageUsageKB() < STORE_QUOTA_KB * 0.8) return;   _storeWarned = true;   toastWarn('Browser storage is getting full. Open Save & Load → Export career file to back up, or delete an old slot.'); } function slotKB(n) { try { return Math.round((localStorage.getItem(slotKey(n)) || '').length / 1024); } catch (e) { return 0; } } function shrinkAllSlots() {   let freed = 0;   for (let i = 1; i <= SLOT_COUNT; i++) {     try {       const raw = localStorage.getItem(slotKey(i));       if (!raw || raw.slice(0, 4) === 'LZ1:') continue;       const d = unpackSave(raw); if (!d) continue;       const packed = packSave(d); localStorage.setItem(slotKey(i), packed); freed += raw.length - packed.length;     } catch (e) { }   }   return Math.round(freed / 1024); } function storageReportHTML() {   const used = storageUsageKB(), pct = Math.min(100, Math.round(used / STORE_QUOTA_KB * 100)), col = pct > 80 ? '#ff5a5a' : pct > 55 ? '#f2b928' : '#34c471';   return `<div style="flex-basis:100%;margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px"><span>Browser storage</span><b>${used > 1024 ? (used / 1024).toFixed(1) + ' MB' : used + ' KB'} of about ${STORE_QUOTA_KB / 1000} MB</b></div>     <div style="height:6px;background:#2c2c2e;border-radius:4px;overflow:hidden;margin-top:3px"><i style="display:block;height:100%;width:${pct}%;background:${col}"></i></div>     <div class="hint" style="margin-top:4px">This career: ${slotKB(slot)} KB${pct > 80 ? ' · nearly full, export a backup' : ''}</div></div>`; } function exportCareer() {   save();   const raw = localStorage.getItem(slotKey(slot)); if (!raw) { toast('Nothing to export yet.'); return; }   const name = ('mzansi-' + me().s + '-' + seasonLabel(G.season)).replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '.mmsave';   const url = URL.createObjectURL(new Blob([raw], { type: 'text/plain' }));   const a = document.createElement('a'); a.href = url; a.download = name;   document.body.appendChild(a); a.click(); document.body.removeChild(a);   setTimeout(() => URL.revokeObjectURL(url), 4000);   toast('Career file saved: ' + name); } function importCareer() {   const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.mmsave,.txt,.json,text/plain';   inp.onchange = async () => {     const f = inp.files && inp.files[0]; if (!f) return;     try { const raw = (await f.text()).trim(), d = unpackSave(raw); if (!d) throw new Error('bad'); chooseImportSlot(raw, d); }     catch (e) { toast('That file is not a Mzansi Manager career.'); }   };   inp.click(); } function chooseImportSlot(raw, d) {   const t = d.G.teams[d.G.myTeam];   const rows = []; for (let i = 1; i <= SLOT_COUNT; i++) { const s = slotInfo(i); rows.push(`<button class="btn ${s ? 'ghost ' : ''}sm" data-imp="${i}" style="display:block;width:100%;margin:6px 0;text-align:left">Slot ${i} — ${s ? 'replace ' + esc(s.club) + ' (' + seasonLabel(s.season) + ')' : 'empty'}</button>`); }   openModal('Import career', `<p style="margin:0 0 8px"><b>${esc(t.n)}</b> · ${seasonLabel(d.G.season)} · managed by ${esc((d.G.manager && d.G.manager.name) || 'Coach')}</p><p class="hint" style="margin:0 0 6px">Pick a slot. The game restarts into the imported career.</p>${rows.join('')}`,     `<button class="btn ghost sm" onclick="closeModal()">Cancel</button>`);   document.querySelectorAll('[data-imp]').forEach(b => b.onclick = () => {     const i = +b.dataset.imp;     try {       localStorage.setItem(slotKey(i), raw.slice(0, 4) === 'LZ1:' ? raw : packSave(d));       localStorage.setItem(SAVE_PREFIX + 'meta_' + i, JSON.stringify({ club: t.n, tier: t.tier, season: d.G.season, round: d.G.round, manager: (d.G.manager && d.G.manager.name) || 'Coach', trophies: t.trophies.length, saved: d.saved || Date.now() }));       localStorage.setItem(LAST_SLOT_KEY, String(i));     } catch (e) { toastWarn('Not enough storage to import. Delete an old slot first.'); return; }     leavingApp = true; location.reload();   }); } function slotKey(n) { return SAVE_PREFIX + n; }
@@ -5979,7 +6070,7 @@ function load(n) {
     try { if (!G.ov) initOverseas(G); else ovEnsure(G); linkOverseas(G); injectRealPlayers(G); G.ov.teams.forEach(t => { t.fin = t.fin || newFin(); t.squad.forEach(p => { p.value = valueOf(p); }); ensureLineup(t); }); } catch (e) { console.error('overseas', e); }
     try { if (G.africa && G.africa.ekc === undefined) { G.africa.ekc = null; G.africa.ecc = null; G.africa.ekcHistory = G.africa.ekcHistory || []; G.africa.eccHistory = G.africa.eccHistory || []; buildEuro(G); } } catch (e) { console.error('euro', e); }
     if (!G.super8) buildExtraCups(G);     if (!G.watchlist) G.watchlist = [];
-    G.manager.rep = G.manager.rep || 40;     G.curDay = Math.max(G.curDay != null ? G.curDay : 0, Math.max(0, G.round - 1) * DAYS_PER_ROUND + (G.round > 0 ? 1 : 0));     if (!G.finished && G.round < totalRounds(G)) G.curDay = Math.min(G.curDay, G.round * DAYS_PER_ROUND); /* saves made on the old 10-day grid: pull back so the next matchday is not skipped */
+    G.manager.rep = G.manager.rep || 40;     G.curDay = G.round > 0 ? Math.max(G.curDay != null ? G.curDay : 0, Math.max(0, G.round - 1) * DAYS_PER_ROUND + 1) : (G.curDay != null ? G.curDay : 0);     if (!G.finished && G.round < totalRounds(G)) G.curDay = Math.min(G.curDay, G.round * DAYS_PER_ROUND); /* saves made on the old 10-day grid: pull back so the next matchday is not skipped */
     try { localStorage.setItem(LAST_SLOT_KEY, String(slot)); } catch (e) { }
     return true;
   } catch (e) { return false; }
@@ -6039,7 +6130,7 @@ function buildSlots() {
 const MENU_SECTIONS = [
   ['Career', [['inbox','Inbox'],['bathini','Bathini'],['match','Matchday'],['calendar','Calendar'],['table','League tables & fixtures']]],
   ['Squad', [['squad','Squad & Tactics'], ['youth','Academy & Training'],['transfers','Transfers'],['otherclubs','Other Clubs'],['scouting','Scouting']]],
-  ['Competitions', [['cups','Cups'],['africa','Continental football'],['nations','Nations'],['world','World players'],['clubrank','Club rankings'],['cities','Club Cities'],['stats','Player Stats']]],
+  ['Competitions', [['cups','Cups'],['leagues','Other Leagues'],['africa','Continental football'],['nations','Nations'],['world','World players'],['clubrank','Club rankings'],['cities','Club Cities'],['stats','Player Stats']]],
   ['Club', [['club','Club & Finances'],['mmcoins','MM Coins'],['commercial','Sponsors & Commercial'],['stadium','Stadium & tickets'],['board','Board & objectives'], ['trophies','Trophy room'],['legends','MM Legends'],['manager','Manager'],['news','News']]],
   ['More', [['careerfile','Save & Load'],['soundsettings','Music & sound effects'],['regional','Language & currency'],['getadded','Get added to the game']]]
 ];
@@ -6103,7 +6194,7 @@ function render() { try { checkManagerBirthday(); } catch (e) { } try { updateNa
   const dispatch = { match: viewMatch, table: viewTable, fixtures: viewFixtures, squad: viewSquadHub, tactics: viewSquadHub, finances: viewFinances, trophies: viewTrophies,
      transfers: viewTransfers, youth: viewYouthHub, training: viewYouthHub, inbox: viewInbox, bathini: viewBathini, stats: viewStats, news: viewNews,
       cups: viewCups, africa: viewAfrica, nations: viewNations, world: viewWorld, clubrank: viewClubRank, cities: viewCities, commercial: viewCommercial, stadium: viewStadium, board: viewBoard, legends: viewLegends, stadium: viewStadium, calendar: viewCalendar, watchlist: viewWatchlist, scouting: viewScouting,
-     info: viewInfo, getadded: viewGetAdded, createclub: viewCreateClub, manager: viewManager, otherclubs: viewOtherClubs, club: viewClub, mmcoins: viewMMCoins };
+     info: viewInfo, getadded: viewGetAdded, createclub: viewCreateClub, manager: viewManager, otherclubs: viewOtherClubs, leagues: viewLeagues, club: viewClub, mmcoins: viewMMCoins };
   try {
     if (G.jobless && JOBLESS_BLOCKED.indexOf(tab) >= 0) viewJoblessGate(); else (dispatch[tab] || viewMatch)();     if (G.jobless && active && JOBLESS_BLOCKED.indexOf(tab) < 0 && tab !== 'manager') joblessBanner(active);
   } catch (err) {
@@ -6312,7 +6403,7 @@ function autoTickRender() {
   } catch (e) { }
   calAdvance();
 }
-   function startAutoSim() {   if (autoSimTimer || isMatchdayToday() || isCupDayToday()) return;   const d0 = new Date(currentDateISO() + 'T12:00:00Z');   calY = d0.getUTCFullYear(); calM = d0.getUTCMonth();   autoSimTimer = setInterval(() => {      if (isMatchdayToday() || isCupDayToday() || G.finished) { const md = isMatchdayToday() || isCupDayToday(); stopAutoSim(); if (md) { toast('Matchday today.'); matchdayChime(); } return; }     const _cs = contSnap(); advanceOneDay(); const _cw = contWhy(_cs); if (_cw) { stopAutoSim(); toast(_cw); try { matchdayChime(); } catch (e) { } }     const d = new Date(currentDateISO() + 'T12:00:00Z');     calY = d.getUTCFullYear(); calM = d.getUTCMonth();     autoTickRender();   }, 250);   if (tab === 'table' || tab === 'transfers') render(); else { goTo('calendar'); calMark(); calFocus(true); setTimeout(calCenter, 150); } } function stopAutoSim() { if (autoSimTimer) { clearInterval(autoSimTimer); autoSimTimer = null; } calFocus(false); render(); } function stepDayOnCalendar() {   if (autoSimTimer || isMatchdayToday() || G.finished) return;   const d0 = new Date(currentDateISO() + 'T12:00:00Z');   calY = d0.getUTCFullYear(); calM = d0.getUTCMonth();   goTo('calendar');   setTimeout(() => {     advanceOneDay();     const d = new Date(currentDateISO() + 'T12:00:00Z');     calY = d.getUTCFullYear(); calM = d.getUTCMonth();     render();     toast(isMatchdayToday() ? 'Matchday today.' : 'No match today.'); if (isMatchdayToday()) matchdayChime();   }, 300); } 
+   function startAutoSim() {   if (autoSimTimer || isMatchdayToday() || isCupDayToday() || seasonOverNow(G)) return;   const d0 = new Date(currentDateISO() + 'T12:00:00Z');   calY = d0.getUTCFullYear(); calM = d0.getUTCMonth();   autoSimTimer = setInterval(() => {      if (isMatchdayToday() || isCupDayToday() || seasonOverNow(G)) { const md = isMatchdayToday() || isCupDayToday(); stopAutoSim(); if (md) { toast('Matchday today.'); matchdayChime(); } else if (seasonOverNow(G)) { toast('1 July: the new season can start.'); } return; }     const _cs = contSnap(); advanceOneDay(); const _cw = contWhy(_cs); if (_cw) { stopAutoSim(); toast(_cw); try { matchdayChime(); } catch (e) { } }     const d = new Date(currentDateISO() + 'T12:00:00Z');     calY = d.getUTCFullYear(); calM = d.getUTCMonth();     autoTickRender();   }, 250);   if (tab === 'table' || tab === 'transfers') render(); else { goTo('calendar'); calMark(); calFocus(true); setTimeout(calCenter, 150); } } function stopAutoSim() { if (autoSimTimer) { clearInterval(autoSimTimer); autoSimTimer = null; } calFocus(false); render(); } function stepDayOnCalendar() {   if (autoSimTimer || isMatchdayToday() || G.finished) return;   const d0 = new Date(currentDateISO() + 'T12:00:00Z');   calY = d0.getUTCFullYear(); calM = d0.getUTCMonth();   goTo('calendar');   setTimeout(() => {     advanceOneDay();     const d = new Date(currentDateISO() + 'T12:00:00Z');     calY = d.getUTCFullYear(); calM = d.getUTCMonth();     render();     toast(isMatchdayToday() ? 'Matchday today.' : 'No match today.'); if (isMatchdayToday()) matchdayChime();   }, 300); } 
 function renderActions() {
   const a = $('#actions'); a.innerHTML = '';
   if (liveState) return;
@@ -6322,9 +6413,15 @@ function renderActions() {
   fb.title = 'Forward'; fb.setAttribute('aria-label', 'Forward'); fb.disabled = navIdx >= navStack.length - 1; fb.onclick = navFwd; a.appendChild(fb);
   if (autoSimTimer) { const sb = el('button', 'btn', 'Stop'); sb.onclick = stopAutoSim; a.appendChild(sb); a.appendChild(el('span', 'hint', 'Simulating days…')); return; }
   if (G.finished) {
+    if (!seasonOverNow(G)) {
+      const cb = el('button', 'btn', 'Continue'); cb.onclick = () => startAutoSim(); a.appendChild(cb);
+      const sk = el('button', 'btn ghost', 'Skip to 1 July'); sk.onclick = () => { G.curDay = seasonEndIdx(G); try { dailyTransferDesk(); } catch (e) { } save(); render(); toast('1 July: the new season can start.'); }; a.appendChild(sk);
+      a.appendChild(el('span', 'hint', 'The season is over. The new season starts on 1 July.'));
+      return;
+    }
     const b = el('button', 'btn', `Start ${seasonLabel(G.season + 1)}`);
     b.onclick = doEndSeason; a.appendChild(b);
-    a.appendChild(el('span', 'hint', 'Promotion, relegation, contracts and the academy intake are settled next.'));
+    a.appendChild(el('span', 'hint', '1 July. Promotion, relegation, contracts and the academy intake are settled next, and the summer transfer window opens.'));
     return;
   }
   if (G.jobless) {
@@ -6334,12 +6431,12 @@ function renderActions() {
   }
 const ndBtn = el('button', 'btn ghost', 'Next day'); ndBtn.disabled = isMatchdayToday(); ndBtn.title = isMatchdayToday() ? 'Play today\'s match first' : 'Advance one day'; ndBtn.disabled = false; ndBtn.title = ''; ndBtn.textContent = (isMatchdayToday() || isCupDayToday()) ? 'Play match' : 'Continue'; ndBtn.className = 'btn'; ndBtn.onclick = headerContinue; a.appendChild(ndBtn);
   if (cupLikeNext() === 'cont') {
-    const L = contPending(), home = (L.stage === 3 || L.leg === 1) ? L.a : L.b, atHome = contMine(home), oppE = contMine(L.a) ? L.b : L.a;
-    const b1 = el('button', 'btn cupBtn', `🌍 ${G.liveMode ? 'Play' : 'Sim'} ${contName(L)} — ${contRoundLabel(L)}`);
+    const L = contPending(), home = contHome(L), atHome = contMine(home), oppE = contMine(L.a) ? L.b : L.a, ico = contIsCup(L) ? '🏆' : '🌍';
+    const b1 = el('button', 'btn cupBtn', `${ico} ${G.liveMode ? 'Play' : 'Sim'} ${contName(L)} — ${contRoundLabel(L)}`);
     b1.onclick = () => startCupMatchday();
     a.appendChild(b1);
     const b2 = el('button', 'btn ghost', 'Quick sim'); b2.onclick = () => contQuickSim(); a.appendChild(b2);
-    a.appendChild(el('span', 'hint cupHint', `🌍   ${atHome ? 'Home to' : 'Away to'} ${cafShort(G, oppE)} in the ${contName(L)}`));
+    a.appendChild(el('span', 'hint cupHint', `${ico}   ${atHome ? 'Home to' : 'Away to'} ${cafShort(G, oppE)} in the ${contName(L)}`));
     return;
   }
   if (cupDueNow(G)) {
@@ -6377,7 +6474,7 @@ function simRounds(n) {
   let cupPlayed = false;
   withPrizeSummary(() => {
     for (let i = 0; i < n && !G.finished; i++) {
-      while (cupDueNow(G)) { playCupRound(G, false); cupPlayed = true; }
+      for (let g = 0; (cupDueNow(G) || contPending()) && g < 12; g++) { if (cupLikeNext() === 'cont') contQuickSim(true); else playCupRound(G, false); cupPlayed = true; }
       const r = playRound(G); if (r) played.push(r);
     }
   });
@@ -6408,7 +6505,7 @@ function simToRoundAnimated(targetRound) {
       else if (cupPlayed) { afterRound(); toast(`${CUP_NAME} results are in — check the cup tab.`); }
       return;
     }
-    if (cupDueNow(G)) { playCupRound(G, false); cupPlayed = true; }
+    if (cupLikeNext() === 'cont') { contQuickSim(true); cupPlayed = true; } else if (cupDueNow(G)) { playCupRound(G, false); cupPlayed = true; }
     else if (isMatchdayToday()) { const r = playRound(G); if (r) playedAll.push(r); }
     else { advanceOneDay(); }
     const d = new Date(currentDateISO() + 'T12:00:00Z');
