@@ -2291,6 +2291,7 @@ function endSeason(G) {   try { repairCareers(G); } catch (e) { }   try { snapCl
   }
   sum.awards = computeSeasonAwards(G, G.teams[G.myTeam] ? G.teams[G.myTeam].tier : 0, repSnap);
   announceSeasonAwards(G, sum.awards);
+  try { awardsSweep(G); worldSeasonAwards(G); } catch (e) { console.error('world awards', e); }
   /* promotion and relegation cascades through every adjacent pair of tiers */
   const promoted = [], relegated = [];
   const playoffs = [];
@@ -2594,6 +2595,162 @@ function announceSeasonAwards(G, awards) {
     if (manager.clubId === G.myTeam) mail(G, { cat: 'award', from: 'Chief Executive', status: 'Manager of the Season', flag: true, subject: `Manager of the Season`, body: [`You have been named ${tierName} Manager of the Season after guiding ${manager.clubName} to ${ordinal(manager.pos)}, well ahead of pre-season expectations.`, `The board is delighted.`] });
   }
 }
+
+
+/* ================= awards: league, tournament and world awards, plus the Global Super Cup ================= */
+const SC_NAME = 'Global Super Cup';
+function awLog(G) { if (!G.awardLog) G.awardLog = { tourn: {}, leagues: {}, world: [], sc: [] }; return G.awardLog; }
+function awAdd(p, season, label, icon, note) { if (!p) return; p.aw = p.aw || []; if (!p.aw.some(a => a.season === season && a.label === label && a.note === note)) p.aw.push({ season, label, icon, note }); }
+function awIsLive(G, t) { return !!t && (G.teams[t.id] === t || (G.ov && G.ov.teams.indexOf(t) >= 0)); }
+function awCcs(G) { return WORLD_CCS.filter(c => c === CUR_CC || (G.ov && (G.ov.ccs || [G.ov.cc]).includes(c))); }
+function awTopFlight(G, cc) { return cc === CUR_CC ? G.teams.filter(t => t.tier === 0) : (G.ov ? G.ov.teams.filter(t => t.cc === cc && t.tier === 0) : []); }
+function awFace(p) { return { face: p.face || null, portrait: p.portrait || null, noFace: !!p.noFace }; }
+function awTeamByName(G, nm) {
+  let t = G.teams.find(x => x.n === nm) || (G.ov && G.ov.teams.find(x => x.n === nm));
+  if (t) return t;
+  try { for (const L of G.africa.leagues) { const c = L.clubs.find(x => x.n === nm); if (c) return buildForeignClub(G, c.id); } } catch (e) { }
+  return null;
+}
+function potPick(t) {
+  const sq = (t.squad || []).filter(p => p.age >= 16); if (!sq.length) return null;
+  const W = { ATT: 1.15, MID: 1.0, DEF: 0.8, GK: 0.6 };
+  return sq.map(p => ({ p, s: p.rating * (W[POS_GROUP[p.pos]] || 1) + gauss() * 4 })).sort((a, b) => b.s - a.s)[0].p;
+}
+function potStats(p) {
+  const g = POS_GROUP[p.pos] || 'MID', apps = rint(5, 8);
+  const gl = g === 'ATT' ? rint(2, 6) : g === 'MID' ? rint(0, 3) : g === 'DEF' ? rint(0, 1) : 0;
+  const as = g === 'ATT' ? rint(0, 3) : g === 'MID' ? rint(1, 4) : g === 'DEF' ? rint(0, 2) : 0;
+  return { apps, g: gl, a: as, cs: g === 'GK' ? rint(2, Math.max(2, apps - 2)) : 0 };
+}
+function potComps(G) {
+  const out = [];
+  if (G.cup && G.cup.done && G.cup.winner != null) out.push({ key: 'cup', name: CUP_NAME, team: G.teams[G.cup.winner] });
+  if (G.super8 && G.super8.done && G.super8.winner != null) out.push({ key: 's8', name: G.super8.name, team: G.teams[G.super8.winner] });
+  if (G.knockout && G.knockout.done && G.knockout.winner != null) out.push({ key: 'ko', name: G.knockout.name, team: G.teams[G.knockout.winner] });
+  if (G.africa) contKeysAll().forEach(k => { const c = G.africa[k]; if (c && c.done && c.winner) { const w = c.winner; out.push({ key: k, name: CONT[k].name, team: w.sa ? G.teams[w.id] : buildForeignClub(G, w.id) }); } });
+  return out;
+}
+function potRecord(G, key, name, team, season) {
+  const L = awLog(G), id = season + ':' + key; if (L.tourn[id] || !team) return null;
+  const p = potPick(team); if (!p) return null;
+  const rec = Object.assign({ season, key, comp: name, pid: p.id, name: p.name, club: team.n, nat: p.nat, pos: p.pos, rating: p.rating }, awFace(p), potStats(p));
+  L.tourn[id] = rec;
+  if (awIsLive(G, team)) awAdd(p, season, 'Player of the Tournament', '🏆', name);
+  news(G, 'cup', `${p.name} (${team.n}) is named Player of the ${name}.`, { pid: p.id });
+  if (team.id === G.myTeam) { try { mail(G, { cat: 'award', from: 'Chief Executive', p, club: team, status: 'Player of the Tournament', flag: true, subject: `Player of the ${name}: ${p.name}`, body: [`${p.name} has been named Player of the ${name}.`, `${rec.g} goals and ${rec.a} assists in ${rec.apps} matches on the way to the title.`] }); } catch (e) { } }
+  return rec;
+}
+function awardsSweep(G) { potComps(G).forEach(c => potRecord(G, c.key, c.name, c.team, G.season)); }
+
+/* ---- Global Super Cup: African champions against European champions, late July ---- */
+function superCupRun(G, force) {
+  if (!G.africa || G.scSeason === G.season) return;
+  const s = G.season; if (!force && currentDateISO() < s + '-07-25') return;
+  const prev = k => (G.africa[CONT[k].hist] || []).filter(h => h.season === s - 1).pop();
+  const a = prev('caf'), b = prev('ekc');
+  G.scSeason = s; if (!a || !b) return;
+  const A = awTeamByName(G, a.winner), B = awTeamByName(G, b.winner); if (!A || !B) return;
+  const [hg, ag] = simAbstract(teamOverall(A), teamOverall(B), 0);
+  let pens = null, win;
+  if (hg !== ag) win = hg > ag ? A : B;
+  else { const pa = clamp(0.5 + (teamOverall(A) - teamOverall(B)) * 0.01, 0.3, 0.7); win = rnd() < pa ? A : B; const w = rint(4, 5), l = rint(2, w - 1); pens = win === A ? [w, l] : [l, w]; }
+  const L = awLog(G), lose = win === A ? B : A;
+  L.sc.push({ season: s, a: A.n, b: B.n, hg, ag, pens, winner: win.n });
+  if (awIsLive(G, win)) { win.trophies = win.trophies || []; win.trophies.push({ season: s, name: SC_NAME }); }
+  if (G.teams[win.id] === win) payPrize(G, win.id, 8, SC_NAME + ' winners prize');
+  const sc = `${A.n} ${hg}–${ag} ${B.n}` + (pens ? ` (${pens[0]}–${pens[1]} on penalties)` : '');
+  news(G, 'cup', `${win.n} win the ${SC_NAME}: ${sc}.`);
+  if ([A.id, B.id].includes(G.myTeam)) { try { mail(G, { cat: 'award', from: 'Chief Executive', flag: true, status: SC_NAME, subject: `${SC_NAME}: ${win.id === G.myTeam ? 'we are world champions' : 'beaten in the final'}`, body: [`${SC_NAME}: ${sc}.`, win.id === G.myTeam ? 'The trophy goes into the cabinet.' : 'A good occasion all the same.'] }); } catch (e) { } }
+  potRecord(G, 'sc', SC_NAME, win, s);
+}
+
+/* ---- league awards for every top flight, taken at the end of each season ---- */
+function worldSeasonAwards(G) {
+  const L = awLog(G), season = G.season, myTop = G.teams[G.myTeam] && G.teams[G.myTeam].tier === 0;
+  awCcs(G).forEach(cc => {
+    const key = season + ':' + cc; if (L.leagues[key]) return;
+    const teams = awTopFlight(G, cc); if (!teams.length) return;
+    const league = tierNamesFor(cc)[0], rows = [];
+    teams.forEach(t => t.squad.forEach(p => { if ((p.ratingApps || 0) >= 8) rows.push({ p, club: t, avg: Math.round(p.ratingSum / p.ratingApps * 100) / 100, apps: p.ratingApps }); }));
+    if (!rows.length) return;
+    const lg = cc === CUR_CC ? null : G.ov.leagues.find(x => x.cc === cc && x.tier === 0);
+    const tab = cc === CUR_CC ? sortTable(G, 0) : afrTable(lg), champId = tab[0] && tab[0].id, champ = champId != null ? G.teams[champId] : null;
+    rows.forEach(r => { r.perf = r.avg + 0.025 * (r.p.goals || 0) + 0.015 * (r.p.assists || 0) + (POS_GROUP[r.p.pos] === 'GK' ? 0.03 * (r.p.cs || 0) : 0) + (r.club.id === champId ? 0.2 : 0); });
+    rows.sort((x, y) => y.perf - x.perf);
+    const best = rows[0], gb = rows.slice().sort((x, y) => (y.p.goals || 0) - (x.p.goals || 0) || (y.p.assists || 0) - (x.p.assists || 0))[0], yp = rows.find(r => r.p.age <= 23);
+    const xi = pickFormationXI(rows.map(r => ({ p: r.p, club: r.club, avg: r.avg, apps: r.apps })));
+    const mk = r => r && Object.assign({ pid: r.p.id, name: r.p.name, club: r.club.n, nat: r.p.nat, pos: r.p.pos, age: r.p.age, rating: r.p.rating, apps: r.p.apps || 0, g: r.p.goals || 0, a: r.p.assists || 0, cs: r.p.cs || 0, avg: r.avg }, awFace(r.p));
+    L.leagues[key] = { season, cc, league, champ: champ ? champ.n : '', pos: mk(best), gb: mk(gb), yp: mk(yp), xi: xi.map(x => ({ pid: x.p.id, name: x.p.name, pos: x.p.pos, club: x.club.n })) };
+    const skip = cc === CUR_CC && myTop;   /* the older season awards already cover your own top flight */
+    if (!skip) {
+      awAdd(best.p, season, 'Player of the Season', '⭐', `${league} · ${best.club.n}`);
+      awAdd(gb.p, season, 'Golden Boot', '⚽', `${league} · ${gb.p.goals || 0} goals`);
+      if (yp) awAdd(yp.p, season, 'Young Player of the Season', '🌱', `${league} · ${yp.club.n}`);
+      xi.forEach(x => awAdd(x.p, season, 'Team of the Season', '🏅', `${league} · ${x.club.n}`));
+      news(G, 'season', `${best.p.name} (${best.club.n}) is named ${league} Player of the Season.`, { pid: best.p.id });
+      news(G, 'season', `${gb.p.name} (${gb.club.n}) wins the ${league} Golden Boot with ${gb.p.goals || 0} goals.`, { pid: gb.p.id });
+    }
+  });
+}
+
+/* ---- Best Player and Manager of the Year, announced at the end of every calendar year ---- */
+function awStatBlock(p, season) { const e = (p.career || []).find(c => c.season === season); return e ? { apps: e.apps || 0, g: e.g || 0, a: e.a || 0, cs: e.cs || 0 } : null; }
+function worldAwardsCompute(G, year) {
+  const L = awLog(G), pv = G.season - 1;
+  if (L.world.some(w => w.year === year)) return null;
+  const honours = {}, why = {}, add = (pid, pts, txt) => { honours[pid] = (honours[pid] || 0) + pts; (why[pid] = why[pid] || []).push(txt); };
+  awCcs(G).forEach(cc => { const r = L.leagues[pv + ':' + cc]; if (!r) return;
+    if (r.pos) add(r.pos.pid, 16, `${r.league} Player of the Season`);
+    if (r.gb) add(r.gb.pid, 5, `${r.league} Golden Boot`);
+    if (r.yp) add(r.yp.pid, 2, 'Young Player of the Season');
+    (r.xi || []).forEach(x => add(x.pid, 5, `${r.league} Team of the Season`)); });
+  Object.keys(L.tourn).forEach(k => { const r = L.tourn[k]; if (r.season !== pv) return; add(r.pid, r.key === 'sc' ? 4 : (r.key === 'caf' || r.key === 'ekc') ? 12 : 5, `Player of the ${r.comp}`); });
+  const rows = [];
+  awCcs(G).forEach(cc => awTopFlight(G, cc).forEach(t => {
+    const champ = (t.trophies || []).some(x => x.season === pv && x.name === tierNamesFor(cc)[0]);
+    const cont = (t.trophies || []).filter(x => x.season === pv && (x.name === CAF_NAME || x.name === EKC_NAME));
+    t.squad.forEach(p => { const st = awStatBlock(p, pv); if (!st || st.apps < 6) return;
+      const grp = POS_GROUP[p.pos] || 'MID', gw = { ATT: 1.4, MID: 2.0, DEF: 3.2, GK: 0 }[grp];
+      let sc = (p.rating - 60) * 2 + st.g * gw + st.a * 1.2 + (grp === 'GK' ? st.cs * 1.8 : 0) + Math.min(st.apps, 38) * 0.3 + (honours[p.id] || 0) + (champ ? 4 : 0) + cont.length * 5 + gauss() * 2.5;
+      const w = (why[p.id] || []).slice(); if (champ) w.push(`${tierNamesFor(cc)[0]} champions`); cont.forEach(x => w.push(`${x.name} winners`));
+      rows.push(Object.assign({ pid: p.id, name: p.name, nat: p.nat, pos: p.pos, age: p.age, rating: p.rating, club: t.n, league: tierNamesFor(cc)[0], cc, score: Math.round(sc * 10) / 10, apps: st.apps, g: st.g, a: st.a, cs: st.cs, honours: w }, awFace(p))); });
+  }));
+  rows.sort((x, y) => y.score - x.score);
+  const list = rows.slice(0, 10); if (list.length < 3) return null;
+  /* Manager of the Year: a club with the best trophy haul, with a bonus for a title at the top of a league */
+  const mm = [];
+  awCcs(G).forEach(cc => awTopFlight(G, cc).forEach(t => {
+    const tr = (t.trophies || []).filter(x => x.season === pv); if (!tr.length) return;
+    let sc = 0; const w = [];
+    tr.forEach(x => { const pts = x.name === EKC_NAME ? 16 : x.name === CAF_NAME ? 14 : x.name === tierNamesFor(cc)[0] ? 10 : x.name === SC_NAME ? 3 : /Cup|Copa|Mzansi8|Knockout/i.test(x.name) ? 4 : 2; sc += pts; w.push(x.name); });
+    mm.push({ t, sc: sc + gauss() * 1.5, w });
+  }));
+  if (!mm.length) { awCcs(G).forEach(cc => { const tab = cc === CUR_CC ? sortTable(G, 0) : afrTable(G.ov.leagues.find(x => x.cc === cc && x.tier === 0)); const r0 = tab[0], t = r0 && G.teams[r0.id]; if (t && r0.p > 0) mm.push({ t, sc: r0.pts / r0.p * 4 + gauss(), w: [`${tierNamesFor(cc)[0]} leaders at the turn of the year`] }); }); }
+  mm.sort((x, y) => y.sc - x.sc);
+  const mg = mm[0] ? (m => { const mine = m.t.id === G.myTeam; return { name: mine ? G.manager.name : clubMgr(m.t).name, club: m.t.n, mine, honours: m.w, nat: mine ? G.manager.nat : (clubMgr(m.t).nat || null) }; })(mm[0]) : null;
+  const rec = { year, season: pv, list, mgr: mg };
+  L.world.push(rec); if (L.world.length > 40) L.world.shift();
+  const win = list[0], f = findPlayer(G, win.pid);
+  if (f) awAdd(f.p, year, 'Best Player in the World', '👑', `${year}`);
+  news(G, 'season', `${win.name} (${win.club}) is named Best Player in the World ${year}.`, { pid: win.pid });
+  if (mg) news(G, 'season', `${mg.name} (${mg.club}) is named Manager of the Year ${year}.`);
+  if (f && f.t.id === G.myTeam) { try { mail(G, { cat: 'award', from: 'Chief Executive', p: f.p, club: f.t, status: 'Best Player in the World', flag: true, subject: `Best Player in the World: ${win.name}`, body: [`${win.name} has been named Best Player in the World ${year}.`, 'A proud moment for the whole club.'] }); } catch (e) { } }
+  if (mg && mg.mine) { try { mail(G, { cat: 'award', from: 'Chief Executive', flag: true, status: 'Manager of the Year', subject: `Manager of the Year ${year}`, body: [`You have been named Manager of the Year ${year}.`] }); } catch (e) { } }
+  return rec;
+}
+function yearEndCheck(G) {
+  const iso = currentDateISO(), y = +iso.slice(0, 4), m = +iso.slice(5, 7), d = +iso.slice(8, 10);
+  const target = (m === 12 && d >= 20) ? y : y - 1;
+  if (G.awYear == null) { G.awYear = target; return; }
+  if (target <= G.awYear) return;
+  G.awYear = target;
+  if (worldAwardsCompute(G, target)) { (G.awQueue = G.awQueue || []).push(target); try { stopAutoSim(); } catch (e) { } }
+}
+function awTick(G) { if (!G || !G.teams) return; superCupRun(G); awardsSweep(G); yearEndCheck(G); }
+(function () {
+  const adv = advanceOneDay; advanceOneDay = function () { const r = adv.apply(this, arguments); try { awTick(G); } catch (e) { console.error('awards', e); } return r; };
+  const pr = playRound; playRound = function (g) { try { if (g && g.round === 0) superCupRun(g, true); } catch (e) { console.error('supercup', e); } const r = pr.apply(this, arguments); try { awTick(g || G); } catch (e) { console.error('awards', e); } return r; };
+})();
 
 /* ---------------- transfers ---------------- */
 function teamById(G, id) { return G.teams[id] || (G.africa && G.africa.squadCache && G.africa.squadCache[id]) || null; }
@@ -3996,7 +4153,7 @@ function crossMove(id, wage, years) {
   /* it is the same career: inbox, news, Bathini, records, MM Coins and history all come with you */
   try {
     const mapId = x => (x != null && Object.prototype.hasOwnProperty.call(ID_MAP, x)) ? ID_MAP[x] : x;
-    ['inbox', 'mailKeys', 'mailSeq', 'news', 'mm', 'watchlist', 'legends', 'objLog', 'trainTally', 'bdayChecked', 'bdayPending', 'intlInit', 'worldHist', 'intl', 'transferLog'].forEach(k => { if (old[k] !== undefined) NG[k] = old[k]; });
+    ['inbox', 'mailKeys', 'mailSeq', 'news', 'mm', 'watchlist', 'legends', 'objLog', 'trainTally', 'bdayChecked', 'bdayPending', 'intlInit', 'worldHist', 'intl', 'transferLog', 'awardLog', 'awYear', 'awQueue', 'scSeason'].forEach(k => { if (old[k] !== undefined) NG[k] = old[k]; });
     if (old.curDay != null && NG.season === old.season) NG.curDay = old.curDay;
     (NG.transferLog || []).forEach(r => { r.from = mapId(r.from); r.to = mapId(r.to); });
     if (old.records) {
@@ -5008,6 +5165,22 @@ function ovEnsure(G) {
   ov.leagues.forEach(L => { if (!L.cc) L.cc = ov.cc; });
   ovCCs().forEach(cc => { if (!ov.ccs.includes(cc)) ovAddCountry(G, cc); });
 }
+function ovMatchStats(t, gf, ga, refresh) {
+  if (!t._xi || refresh) { try { t._xi = autoLineup(t).slice(); } catch (e) { t._xi = []; } }
+  const byId = {}; t.squad.forEach(p => { byId[p.id] = p; });
+  const xi = t._xi.map(id => byId[id]).filter(Boolean); if (!xi.length) return;
+  const out = xi.filter(p => POS_GROUP[p.pos] !== 'GK'), W = { ATT: 6, MID: 2.6, DEF: 0.7 }, sc = [], as = [];
+  const wt = p => (W[POS_GROUP[p.pos]] || 1) * (0.6 + p.rating / 100);
+  const pickW = ex => { const c = out.filter(p => p !== ex); if (!c.length) return null; let r = rnd() * c.reduce((s, p) => s + wt(p), 0); for (const p of c) { r -= wt(p); if (r <= 0) return p; } return c[c.length - 1]; };
+  for (let i = 0; i < gf; i++) { const s = pickW(null); if (!s) break; s.goals = (s.goals || 0) + 1; s.cG = (s.cG || 0) + 1; sc.push(s); if (rnd() < 0.72) { const a = pickW(s); if (a) { a.assists = (a.assists || 0) + 1; a.cA = (a.cA || 0) + 1; as.push(a); } } }
+  const won = gf > ga, draw = gf === ga;
+  xi.forEach(p => {
+    p.apps = (p.apps || 0) + 1; p.sApps = (p.sApps || 0) + 1; p.cApps = (p.cApps || 0) + 1;
+    const gk = POS_GROUP[p.pos] === 'GK'; if (gk && ga === 0) p.cs = (p.cs || 0) + 1;
+    const r = clamp(6.1 + (won ? 0.5 : draw ? 0.1 : -0.3) + (p.rating - 72) / 32 + (sc.includes(p) ? 0.8 : 0) + (as.includes(p) ? 0.4 : 0) + (gk && ga === 0 ? 0.5 : 0) + gauss() * 0.45, 4.5, 9.8);
+    p.ratingSum = (p.ratingSum || 0) + r; p.ratingApps = (p.ratingApps || 0) + 1;
+  });
+}
 function ovRound(G) {
   const ov = G.ov; if (!ov) return;
   ov.leagues.forEach(L => {
@@ -5017,6 +5190,7 @@ function ovRound(G) {
       if (A._r == null || L.round % 8 === 0) A._r = teamOverall(A);
       if (B._r == null || L.round % 8 === 0) B._r = teamOverall(B);
       const [hg, ag] = simAbstract(A._r, B._r, 2.6);
+      ovMatchStats(A, hg, ag, L.round % 8 === 0); ovMatchStats(B, ag, hg, L.round % 8 === 0);
       const rh = L.table.find(r => r.id === m.h), ra = L.table.find(r => r.id === m.a);
       rh.p++; ra.p++; rh.gf += hg; rh.ga += ag; ra.gf += ag; ra.ga += hg;
       if (hg > ag) { rh.w++; ra.l++; rh.pts += 3; } else if (ag > hg) { ra.w++; rh.l++; ra.pts += 3; } else { rh.d++; ra.d++; rh.pts++; ra.pts++; }
@@ -5030,6 +5204,11 @@ function ovSeasonEnd(G) {
   ovFinish(G);
   const st = ov.leagues.map(L => afrTable(L));
   ov.champs = ov.leagues.map((L, k) => st[k][0].id);
+  ov.leagues.forEach((L, k) => { const ct = ov.teams[+ov.champs[k].slice(2)]; if (ct) { ct.trophies = ct.trophies || []; ct.trophies.push({ season: G.season, name: tierNamesFor(L.cc)[L.tier] }); } });
+  ov.teams.forEach(t => (t.squad || []).forEach(p => {
+    if ((p.apps || 0) > 0) { p.career = p.career || []; p.career.push({ season: G.season, club: t.id, tier: t.tier, apps: p.apps || 0, sApps: p.sApps || 0, g: p.goals || 0, a: p.assists || 0, rating: p.rating, cs: p.cs || 0 }); if (p.career.length > 20) p.career.shift(); }
+    p.apps = 0; p.sApps = 0; p.goals = 0; p.assists = 0; p.cs = 0; p.ratingSum = 0; p.ratingApps = 0;
+  }));
   /* promotion and relegation inside each country: three swap between each pair of divisions */
   const moves = [];
   (ov.ccs || [ov.cc]).forEach(cc => {
@@ -6178,7 +6357,7 @@ function renderHistoryBtns() {
 document.addEventListener('click', e => {}, false);
 
 /* ---------------- render ---------------- */
-function render() { try { checkManagerBirthday(); } catch (e) { } try { updateNavToggle(); closeNavMenu(); } catch (e) { } try { updateNavToggle(); closeNavMenu(); } catch (e) { }   $('#mgrFace').innerHTML = avatarSVG(G.manager.avatar, 42);   $('#mgrNameTop').textContent = G.manager.name;   renderTicker();   const curD = new Date(currentDateISO() + 'T12:00:00Z');   $('#statDate').textContent = `${MONTH_NAMES[curD.getUTCMonth()]} ${curD.getUTCFullYear()}`;   const cb = $('#contBtn'); if (cb) cb.textContent = (isMatchdayToday() || isCupDayToday()) ? 'Play match' : 'Continue';   const winOpen = inTransferWindow(G), winPill = $('#winPill'); windowTickCheck(winOpen);   if (winPill) {     winPill.className = 'winpill ' + (winOpen ? 'open' : 'shut');     winPill.textContent = winOpen       ? `${currentWindowName(G)} open, ${windowCloses(G)} ${windowCloses(G) === 1 ? 'day' : 'days'} left`       : `${currentWindowName(G)} opens in ${roundsToNextWindow(G)} ${roundsToNextWindow(G) === 1 ? 'day' : 'days'}`;   }   const contBtn = $('#contBtn');   if (contBtn) {     contBtn.textContent = G.finished ? `Start ${seasonLabel(G.season + 1)}` : (autoSimTimer ? 'Stop' : ((isMatchdayToday() || isCupDayToday()) ? 'Play match' : 'Continue'));     contBtn.disabled = !!liveState;   }
+function render() { try { checkManagerBirthday(); } catch (e) { } try { updateNavToggle(); closeNavMenu(); } catch (e) { } try { updateNavToggle(); closeNavMenu(); } catch (e) { }   $('#mgrFace').innerHTML = avatarSVG(G.manager.avatar, 42);   $('#mgrNameTop').textContent = G.manager.name;   renderTicker();   const curD = new Date(currentDateISO() + 'T12:00:00Z');   $('#statDate').textContent = `${MONTH_NAMES[curD.getUTCMonth()]} ${curD.getUTCFullYear()}`;   const cb = $('#contBtn'); if (cb) cb.textContent = (isMatchdayToday() || isCupDayToday()) ? 'Play match' : 'Continue';   const winOpen = inTransferWindow(G), winPill = $('#winPill'); windowTickCheck(winOpen);   if (winPill) {     winPill.className = 'winpill ' + (winOpen ? 'open' : 'shut');     winPill.textContent = winOpen       ? `${currentWindowName(G)} open, ${windowCloses(G)} ${windowCloses(G) === 1 ? 'day' : 'days'} left`       : `${currentWindowName(G)} opens in ${roundsToNextWindow(G)} ${roundsToNextWindow(G) === 1 ? 'day' : 'days'}`;   }   const contBtn = $('#contBtn');   if (contBtn) {     contBtn.textContent = G.finished ? (seasonOverNow(G) ? `Start ${seasonLabel(G.season + 1)}` : (autoSimTimer ? 'Stop' : 'Continue')) : (autoSimTimer ? 'Stop' : ((isMatchdayToday() || isCupDayToday()) ? 'Play match' : 'Continue'));     contBtn.disabled = !!liveState;   }
   const t = me();
   $('#myCrest').innerHTML = G.jobless ? '<div style="width:30px;height:30px;border-radius:50%;background:#fff;flex:none"></div>' : crestHTML(t, 30);
   $('#myName').textContent = G.jobless ? 'Unemployed' : t.n;
