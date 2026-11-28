@@ -4595,3 +4595,223 @@ bthDates = function (g) {
   const B = g.bth, now = bthDate(g), prev = B.last.dt || now; B.last.dt = now; const a = Date.parse(prev), b = Date.parse(now); if (!(b > a)) return;
   for (let y = +prev.slice(0, 4); y <= +now.slice(0, 4); y++) Object.keys(pk.date).forEach(k => { const t = Date.parse(y + '-' + k); if (t > a && t <= b) { bthAdd(g, bthLeagueAcct(g, 0), pk.date[k], {}); bthAdd(g, bthNeutral(g), pk.date[k], {}); } });
 };
+
+/* ============================================================
+   TEAM EDITING (name + crest) and MANAGER PICTURE
+   ============================================================ */
+(function () {
+  const SHAPES = ['shield', 'circle', 'diamond', 'hexagon', 'pentagon', 'roundsquare'];
+  /* generic editor: base = team-like object (current look), onSave(edit|null) edit = {n,s,cr,cimg}; null = reset to original */
+  function openTeamEditor(base, o) {
+    const st = { n: base.n, s: base.s, mode: base.cimg ? 'upload' : base.cr ? 'design' : 'orig', cimg: base.cimg || null,
+      cr: Object.assign({ icon: (typeof CC_ICONS !== 'undefined' && CC_ICONS[0]) || 'ball', shape: 'shield', c1: base.c1 || '#1c8f4c', c2: base.c2 || '#ffffff' }, base.cr || {}) };
+    const orig = Object.assign({}, base, { cr: null, cimg: null, n: o.origN || base.n, s: o.origS || base.s });
+    const prevObj = () => { const t = Object.assign({}, base, { n: st.n || base.n, s: st.s || base.s, cr: null, cimg: null, ck: base.ck || (o.origN ? o.origN + '|' + o.origS : base.n + '|' + base.s) });
+      if (st.mode === 'upload' && st.cimg) t.cimg = st.cimg; else if (st.mode === 'design') t.cr = st.cr; return t; };
+    const draw = () => {
+      const icons = (typeof CC_ICONS !== 'undefined' ? CC_ICONS : Object.keys(CREST_ICONS));
+      const pv = prevObj();
+      openModal(o.title || 'Edit club', `
+        <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px"><span id="tePrev">${crestHTML(pv, 64)}</span>
+          <div style="flex:1;min-width:0"><input type="text" id="teN" maxlength="26" placeholder="Club name" value="${esc(st.n)}" style="display:block;width:100%;margin-bottom:6px">
+          <input type="text" id="teS" maxlength="12" placeholder="Short name" value="${esc(st.s)}" style="display:block;width:100%"></div></div>
+        <p class="hint" style="margin:0 0 6px">Crest</p>
+        <div class="chipbar" style="border:none;padding:0 0 10px">${[['orig', 'Original'], ['design', 'Design one'], ['upload', 'Upload picture']].map(([k, l]) => `<button class="chip" data-temode="${k}" aria-pressed="${st.mode === k}">${l}</button>`).join('')}</div>
+        ${st.mode === 'design' ? `<p class="hint" style="margin:0 0 6px">Icon</p><div class="chipbar" style="border:none;padding:0 0 10px;flex-wrap:wrap">${icons.map(i => `<button class="chip" data-teicon="${i}" aria-pressed="${st.cr.icon === i}" style="display:flex;align-items:center;gap:5px">${crestCustomHTML({ s: st.s, n: st.n, c1: st.cr.c1, c2: st.cr.c2, icon: i, shape: st.cr.shape }, 18)}${i}</button>`).join('')}</div>
+          <p class="hint" style="margin:0 0 6px">Shape</p><div class="chipbar" style="border:none;padding:0 0 10px">${SHAPES.map(sh => `<button class="chip" data-teshape="${sh}" aria-pressed="${st.cr.shape === sh}">${sh}</button>`).join('')}</div>
+          <div style="display:flex;gap:10px"><label class="hint">Primary <input type="color" id="teC1" value="${st.cr.c1}"></label><label class="hint">Secondary <input type="color" id="teC2" value="${st.cr.c2}"></label></div>` : ''}
+        ${st.mode === 'upload' ? `<div style="margin:0 0 6px"><button class="btn ghost sm" id="teUp">${st.cimg ? 'Choose a different picture' : 'Choose a picture'}</button><p class="hint" style="margin:6px 0 0">A square picture with a clear background works best. It is shrunk to fit.</p></div>` : ''}
+        <p class="hint" style="margin:10px 0 0">${esc(o.note || '')}</p>`,
+        `<button class="btn ghost sm" id="teCancel">Cancel</button>${o.canReset ? '<button class="btn ghost sm" id="teReset">Reset to original</button>' : ''}<button class="btn sm" id="teSave">Save</button>`);
+      const m = $('#modal'); const q = s => m.querySelector(s);
+      const keep = () => { st.n = q('#teN').value; st.s = q('#teS').value; };
+      const prev = () => { keep(); q('#tePrev').innerHTML = crestHTML(prevObj(), 64); };
+      q('#teN').oninput = prev; q('#teS').oninput = prev;
+      m.querySelectorAll('[data-temode]').forEach(b => b.onclick = () => { keep(); st.mode = b.dataset.temode; draw(); });
+      m.querySelectorAll('[data-teicon]').forEach(b => b.onclick = () => { keep(); st.cr.icon = b.dataset.teicon; draw(); });
+      m.querySelectorAll('[data-teshape]').forEach(b => b.onclick = () => { keep(); st.cr.shape = b.dataset.teshape; draw(); });
+      if (q('#teC1')) { q('#teC1').onchange = e => { keep(); st.cr.c1 = e.target.value; draw(); }; q('#teC2').onchange = e => { keep(); st.cr.c2 = e.target.value; draw(); }; }
+      if (q('#teUp')) q('#teUp').onclick = () => { keep(); mmPickImage(160, 'png', d => { st.cimg = d; draw(); }); };
+      q('#teCancel').onclick = () => { closeModal(); if (o.onCancel) o.onCancel(); };
+      if (q('#teReset')) q('#teReset').onclick = () => { closeModal(); o.onSave(null); };
+      q('#teSave').onclick = () => {
+        keep(); const n = st.n.trim(), s = st.s.trim();
+        if (!n) { toast('Give the club a name.'); return; }
+        if (st.mode === 'upload' && !st.cimg) { toast('Choose a picture first, or pick another crest option.'); return; }
+        const e = { n, s: s || n.slice(0, 12) };
+        if (st.mode === 'design') e.cr = Object.assign({}, st.cr); else if (st.mode === 'upload') e.cimg = st.cimg;
+        closeModal(); o.onSave(e);
+      };
+    };
+    draw();
+  }
+  window.openTeamEditor = openTeamEditor;
+
+  /* ---- team selection: browser-wide edits ---- */
+  function selEditBtn() {
+    const bar = document.querySelector('#start .startbar'); if (!bar || document.getElementById('editClubBtn')) return;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn ghost sm'; b.id = 'editClubBtn'; b.textContent = 'Edit club'; b.style.marginLeft = '8px';
+    b.title = 'Change the name and crest of the selected club (saved in this browser, used by new careers)';
+    const h = document.getElementById('startHint'); bar.insertBefore(b, h || null);
+    b.onclick = () => {
+      if (pickClub == null) { toast('Select a club first.'); return; }
+      const c0 = worldClubs(pickCC)[pickClub], ed = teLoad(), key = pickCC + '|' + c0.n + '|' + c0.s, cur = teView(pickCC, c0);
+      openTeamEditor(cur, { title: 'Edit ' + c0.n, origN: c0.n, origS: c0.s, canReset: !!ed[key], note: 'Saved in this browser. It applies to new careers; careers you already started are not changed.',
+        onSave: e => { const all = Object.assign({}, teLoad()); if (e) all[key] = e; else delete all[key]; if (teSave(all)) { buildClubGrid(); const h2 = $('#startHint'); if (h2) h2.textContent = teView(pickCC, c0).n + ' - ' + tierShortFor(pickCC)[c0.t] + '.'; toast(e ? 'Club saved in this browser.' : 'Club reset.'); } } });
+    };
+  }
+  selEditBtn();
+
+  /* ---- inside a career: only this career ---- */
+  function careerEdit() {
+    const t = me(); if (!t || G.jobless) return;
+    const orig = t.ck ? t.ck.split('|') : [t.n, t.s];
+    openTeamEditor(t, { title: 'Edit ' + t.n, origN: orig[0], origS: orig[1], canReset: !!(t.ck || t.cr || t.cimg), note: 'Only changes this career. Your other saves and new careers are not affected.',
+      onSave: e => {
+        if (!t.ck) t.ck = orig[0] + '|' + orig[1];
+        if (e) { t.n = e.n; t.s = e.s; delete t.cr; delete t.cimg; if (e.cr) t.cr = e.cr; if (e.cimg) t.cimg = e.cimg; }
+        else { const [on, os] = t.ck.split('|'); t.n = on; t.s = os; delete t.cr; delete t.cimg; delete t.ck; }
+        save(); render(); toast(e ? 'Club updated.' : 'Club reset to the original.');
+      } });
+  }
+  const _vc = window.viewClub;
+  window.viewClub = function () {
+    const r = _vc.apply(this, arguments);
+    try { const tr = document.querySelector('#v-club #clTrophies'); if (tr && !document.getElementById('clEdit')) { tr.insertAdjacentHTML('beforebegin', '<button class="mini" id="clEdit">Edit club</button>'); document.getElementById('clEdit').onclick = careerEdit; } } catch (e) { }
+    return r;
+  };
+
+  /* ---- manager picture inside a career ---- */
+  function changePicture() {
+    const cur = G.manager.avatar, grid = MANAGER_AVATARS.map(id => `<button class="avbtn" data-mav="${id}" aria-pressed="${cur === id}" type="button">${avatarSVG(id, 56)}</button>`).join('');
+    openModal('Manager picture', `<div style="margin-bottom:10px"><button class="btn sm" id="mavUp">Upload your own picture</button><p class="hint" style="margin:6px 0 0">Square pictures work best. It is saved with your career and travels with exported saves.</p></div><div class="avpick">${grid}</div>`, `<button class="btn ghost sm" onclick="closeModal()">Close</button>`);
+    const set = v => { G.manager.avatar = v; save(); closeModal(); render(); toast('Picture updated.'); };
+    document.querySelectorAll('#modal [data-mav]').forEach(b => b.onclick = () => set(b.dataset.mav));
+    $('#mavUp').onclick = () => mmPickPhoto(set);
+  }
+  const _vm = window.viewManager;
+  window.viewManager = function () {
+    const r = _vm.apply(this, arguments);
+    try { const im = document.querySelector('#v-manager .mface img.face, #v-manager .pad img.face'); if (im && !document.getElementById('mgrPic')) { const w = im.parentNode; w.style.cssText = (w.style.cssText || '') + ';display:flex;flex-direction:column;align-items:center;gap:6px'; w.insertAdjacentHTML('beforeend', '<button class="mini" id="mgrPic" type="button">Change picture</button>'); document.getElementById('mgrPic').onclick = changePicture; } } catch (e) { }
+    return r;
+  };
+})();
+
+/* ============================================================
+   CLUB CREATOR (full screen), more crest shapes/icons, header shortcuts
+   ============================================================ */
+(function () {
+  Object.assign(CREST_ICONS, {
+    anchor: '<circle cx="12" cy="7" r="1.8" fill="none" stroke="#fff" stroke-width="1.3"/><path d="M12 9v9M8 12h8M6 14c0 3 2.5 5 6 5s6-2 6-5" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round"/>',
+    sword: '<path d="M12 4.5 13.4 6v8H10.6V6Z" fill="#fff"/><rect x="8.5" y="14" width="7" height="1.6" fill="#fff"/><rect x="11.2" y="15.6" width="1.6" height="3.4" fill="#fff"/>',
+    tree: '<path d="M12 5 17 11h-2.4l3 4.5H6.4L9.4 11H7Z" fill="#fff"/><rect x="11.2" y="15.5" width="1.6" height="3.5" fill="#fff"/>',
+    castle: '<path d="M6 18V8h2v1.6h1.6V8h1.4v1.6h2V8h1.4v1.6H16V8h2v10Z" fill="#fff"/><rect x="10.6" y="13.5" width="2.8" height="4.5" fill="#111" opacity=".5"/>',
+    bull: '<path d="M5 7c0 3 2 4 4 4.3V14l1.5 3h3l1.5-3v-2.7c2-.3 4-1.3 4-4.3-1.5 1.5-3 2-4.7 2h-4.6C8 9 6.5 8.5 5 7Z" fill="#fff"/>',
+    gem: '<path d="M7 9.5 9 6.5h6l2 3-5 8.5Z" fill="#fff"/><path d="M7 9.5h10M10.2 9.5 12 18l1.8-8.5" stroke="#111" stroke-width=".6" fill="none" opacity=".5"/>',
+    cross: '<path d="M10.5 5h3v5.5H19v3h-5.5V19h-3v-5.5H5v-3h5.5Z" fill="#fff"/>',
+    trident: '<path d="M12 5v14M7.5 5.5v4a4.5 4.5 0 0 0 9 0v-4" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+    moon: '<path d="M14.5 5.5a6.5 6.5 0 1 0 3.8 10.7A6.5 6.5 0 0 1 14.5 5.5Z" fill="#fff"/>',
+    rocket: '<path d="M12 4.5c2.6 1.8 3.5 5 3 8.5l-1.5 1.6h-3L9 13c-.5-3.5.4-6.7 3-8.5Z" fill="#fff"/><circle cx="12" cy="10" r="1.3" fill="#111" opacity=".6"/><path d="M9.5 15 8 18l2.5-1ZM14.5 15 16 18l-2.5-1Z" fill="#fff"/>'
+  });
+  ['anchor', 'sword', 'tree', 'castle', 'bull', 'gem', 'cross', 'trident', 'moon', 'rocket'].forEach(i => { if (!CC_ICONS.includes(i)) CC_ICONS.push(i); });
+  const SHAPES = ['shield', 'circle', 'diamond', 'hexagon', 'pentagon', 'roundsquare', 'octagon', 'oval', 'arch', 'kite', 'banner'];
+  const BOTTOM = { ZA: 4, GB: 1, ES: 1 }, CNAME = { ZA: 'South Africa', GB: 'England', ES: 'Spain' };
+  const S = { cc: 'ZA', name: '', short: '', nick: '', city: '', mode: 'design', cimg: null, shape: 'shield', icon: 'lion', cc1: '#D8B039', cc2: '#111111', ks: 0, h1: '#D8B039', h2: '#111111', a1: '#111111', a2: '#D8B039' };
+  const css = document.createElement('style'); css.id = 'ccsCss';
+  css.textContent = `#ccStudio{position:fixed;inset:0;z-index:9000;background:var(--bg,#0b0f14);overflow:auto;-webkit-overflow-scrolling:touch}
+  #ccStudio .ccsIn{max-width:880px;margin:0 auto;padding:18px 16px 60px}
+  #ccStudio h2{font-family:var(--head);font-size:30px;margin:6px 0 4px}
+  #ccStudio h3{font-family:var(--head);font-size:19px;margin:22px 0 8px;letter-spacing:.02em}
+  #ccStudio .ccsPrev{display:flex;gap:18px;align-items:center;justify-content:center;flex-wrap:wrap;background:rgba(255,255,255,.04);border:1px solid var(--line,#2a313b);border-radius:14px;padding:16px;margin:12px 0}
+  #ccStudio .ccsPrev figure{margin:0;text-align:center}#ccStudio .ccsPrev figcaption{font-size:11px;color:var(--faint,#8b93a0);margin-top:4px}
+  #ccStudio .ccsRow{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:560px){#ccStudio .ccsRow{grid-template-columns:1fr}}
+  #ccStudio input[type=text]{width:100%;box-sizing:border-box}
+  #ccStudio .ccsCols{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0}
+  #ccStudio .ccsCols label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim,#9aa3ad)}
+  #ccStudio .ccsKits{display:flex;gap:8px;flex-wrap:wrap}
+  #ccStudio .ccsKit{background:rgba(255,255,255,.04);border:2px solid transparent;border-radius:10px;padding:4px;cursor:pointer}
+  #ccStudio .ccsKit[aria-pressed=true]{border-color:#f4c01f}
+  #ccStudio .ccsTop{display:flex;align-items:center;gap:10px}`;
+  document.head.appendChild(css);
+  const $$ = (s, r) => (r || document).querySelector(s);
+  const prevTeam = () => ({ id: 'ccs', s: (S.short || S.name || 'NEW').slice(0, 12), n: S.name || 'Your Club', c1: S.h1, c2: S.h2, a1: S.a1, a2: S.a2, kitStyle: S.ks,
+    icon: S.mode === 'design' ? S.icon : null, shape: S.shape, cr: S.mode === 'design' ? { icon: S.icon, shape: S.shape, c1: S.cc1, c2: S.cc2 } : null, cimg: S.mode === 'upload' ? S.cimg : null });
+  function paint() {
+    const root = $$('#ccsDyn'); if (!root) return; const T = prevTeam(), icons = CC_ICONS;
+    const bar = (html) => `<div class="chipbar" style="border:none;padding:0 0 8px;flex-wrap:wrap">${html}</div>`;
+    root.innerHTML = `
+      <div class="ccsPrev"><figure>${crestHTML(T, 84)}<figcaption>Crest</figcaption></figure><figure>${bigKitSVG(T, false, 110)}<figcaption>Home kit</figcaption></figure><figure>${bigKitSVG(T, true, 110)}<figcaption>Away kit</figcaption></figure></div>
+      <h3>Where does it start?</h3>
+      ${bar(['ZA', 'GB', 'ES'].map(cc => `<button class="chip" data-cc="${cc}" aria-pressed="${S.cc === cc}"><span style="display:inline-flex;vertical-align:middle;margin-right:7px">${flagSVG(cc, 22)}</span>${CNAME[cc]}</button>`).join(''))}
+      <p class="hint" style="margin:0">Every new club starts in the bottom division: <b>${esc(tierNamesFor(S.cc)[BOTTOM[S.cc]])}</b>. Earn your way up.</p>
+      <h3>Crest</h3>
+      ${bar([['design', 'Design a crest'], ['upload', 'Upload a picture']].map(([k, l]) => `<button class="chip" data-mode="${k}" aria-pressed="${S.mode === k}">${l}</button>`).join(''))}
+      ${S.mode === 'design' ? `<p class="hint" style="margin:0 0 6px">Shape</p>${bar(SHAPES.map(sh => `<button class="chip" data-shape="${sh}" aria-pressed="${S.shape === sh}" style="display:flex;align-items:center;gap:6px">${crestCustomHTML({ s: 'A', n: 'A', c1: S.cc1, c2: S.cc2, icon: S.icon, shape: sh }, 20)}${sh}</button>`).join(''))}
+        <p class="hint" style="margin:0 0 6px">Icon</p>${bar(icons.map(i => `<button class="chip" data-icon="${i}" aria-pressed="${S.icon === i}" style="display:flex;align-items:center;gap:6px">${crestCustomHTML({ s: 'A', n: 'A', c1: S.cc1, c2: S.cc2, icon: i, shape: S.shape }, 20)}${i}</button>`).join(''))}
+        <div class="ccsCols"><label>Crest primary <input type="color" id="ccsCc1" value="${S.cc1}"></label><label>Crest secondary <input type="color" id="ccsCc2" value="${S.cc2}"></label></div>`
+        : `<button class="btn ghost sm" id="ccsUp" type="button">${S.cimg ? 'Choose a different picture' : 'Choose a picture'}</button><p class="hint" style="margin:6px 0 0">A square picture with a clear background works best. It is shrunk to fit.</p>`}
+      <h3>Kit</h3>
+      <p class="hint" style="margin:0 0 6px">Style</p>
+      <div class="ccsKits">${Array.from({ length: 15 }, (_, i) => `<button class="ccsKit" data-ks="${i}" aria-pressed="${S.ks === i}" type="button" title="Style ${i + 1}">${bigKitSVG(Object.assign({}, T, { kitStyle: i }), false, 62)}</button>`).join('')}</div>
+      <div class="ccsCols" style="margin-top:12px"><label>Home shirt <input type="color" id="ccsH1" value="${S.h1}"></label><label>Home trim <input type="color" id="ccsH2" value="${S.h2}"></label><label>Away shirt <input type="color" id="ccsA1" value="${S.a1}"></label><label>Away trim <input type="color" id="ccsA2" value="${S.a2}"></label></div>`;
+    root.querySelectorAll('[data-cc]').forEach(b => b.onclick = () => { S.cc = b.dataset.cc; paint(); });
+    root.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { S.mode = b.dataset.mode; paint(); });
+    root.querySelectorAll('[data-shape]').forEach(b => b.onclick = () => { S.shape = b.dataset.shape; paint(); });
+    root.querySelectorAll('[data-icon]').forEach(b => b.onclick = () => { S.icon = b.dataset.icon; paint(); });
+    root.querySelectorAll('[data-ks]').forEach(b => b.onclick = () => { S.ks = +b.dataset.ks; paint(); });
+    [['ccsCc1', 'cc1'], ['ccsCc2', 'cc2'], ['ccsH1', 'h1'], ['ccsH2', 'h2'], ['ccsA1', 'a1'], ['ccsA2', 'a2']].forEach(([id, k]) => { const e = $$('#' + id, root); if (e) e.onchange = () => { S[k] = e.value; paint(); }; });
+    const up = $$('#ccsUp', root); if (up) up.onclick = () => mmPickImage(160, 'png', d => { S.cimg = d; paint(); });
+  }
+  function found() {
+    const name = S.name.trim();
+    if (name.length < 2) { toast('Give your club a name (at least 2 characters).'); const e = $$('#ccsName'); if (e) e.focus(); return; }
+    if (S.mode === 'upload' && !S.cimg) { toast('Choose a crest picture, or switch to Design a crest.'); return; }
+    if (!slotGuard()) { close(); return; }
+    const nm = ($('#mgrName').value || '').trim() || 'Coach', nat = ($('#mgrNat') && $('#mgrNat').value) || 'ZA', dob = ($('#mgrDob') && $('#mgrDob').value) || '1988-06-15';
+    const cc = S.cc, bt = BOTTOM[cc];
+    setCountry(cc);
+    G = newGame(Math.max(0, worldClubs(cc).findIndex(c => c.t === bt)), { name: nm, avatar: pickAvatar, nat, dob });
+    const idx = foundClub(G, { name, short: S.short.trim().slice(0, 12), nick: S.nick.trim() || 'The Newcomers', city: S.city.trim() || 'Home town', tier: bt, c1: S.h1, c2: S.h2, a1: S.a1, a2: S.a2, kitStyle: S.ks,
+      icon: S.mode === 'design' ? S.icon : null, shape: S.shape, cr: S.mode === 'design' ? { icon: S.icon, shape: S.shape, c1: S.cc1, c2: S.cc2 } : null, cimg: S.mode === 'upload' ? S.cimg : null });
+    G.myTeam = idx; const t = G.teams[idx]; close();
+    openContractOfferOld({
+      team: t, heading: 'Contract Offer', mgrName: nm, dateISO: new Date().toISOString().slice(0, 10),
+      paragraphs: [`The club's board, which as founder is you, formally appoints you <b>Head Coach</b> of <b>${esc(t.n)}</b>.`, `You will be taking charge in the ${esc(tierNameOf(t))}.`],
+      options: [{ key: 'accept', label: 'Accept Offer' }, { key: 'reject', label: 'Reject Offer' }], defaultKey: 'accept',
+      onChoice: (k) => { if (k !== 'accept') { G = null; return; } setTimeout(() => { try { showSponsors(); } catch (e) { } }, 1500); enterApp(); save(); toast(`Welcome to ${G.teams[idx].n}.`); }
+    });
+  }
+  function close() { const e = document.getElementById('ccStudio'); if (e) e.remove(); document.body.style.overflow = ''; }
+  function open() {
+    close(); const w = document.createElement('div'); w.id = 'ccStudio';
+    w.innerHTML = `<div class="ccsIn"><div class="ccsTop"><button class="btn ghost sm" id="ccsBack" type="button">Back</button></div>
+      <h2>Club creator</h2><p class="hint" style="margin:0">Design the badge and the kits, name the club and found it.</p>
+      <h3>Club</h3><div class="ccsRow"><input type="text" id="ccsName" maxlength="26" placeholder="Club name" value="${esc(S.name)}"><input type="text" id="ccsShort" maxlength="12" placeholder="Short name (for tables)" value="${esc(S.short)}"><input type="text" id="ccsNick" maxlength="22" placeholder="Nickname, e.g. The Lions" value="${esc(S.nick)}"><input type="text" id="ccsCity" maxlength="20" placeholder="Home city" value="${esc(S.city)}"></div>
+      <div id="ccsDyn"></div>
+      <div style="margin-top:24px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="ccsGo" type="button">Found the club and start career</button><button class="btn ghost" id="ccsRand" type="button">Surprise me</button></div></div>`;
+    document.body.appendChild(w); document.body.style.overflow = 'hidden'; w.scrollTop = 0;
+    const bind = (id, k) => { $$('#' + id, w).oninput = e => { S[k] = e.target.value; const T = prevTeam(), p = $$('.ccsPrev', w); if (p) p.innerHTML = `<figure>${crestHTML(T, 84)}<figcaption>Crest</figcaption></figure><figure>${bigKitSVG(T, false, 110)}<figcaption>Home kit</figcaption></figure><figure>${bigKitSVG(T, true, 110)}<figcaption>Away kit</figcaption></figure>`; }; };
+    bind('ccsName', 'name'); bind('ccsShort', 'short'); bind('ccsNick', 'nick'); bind('ccsCity', 'city');
+    $$('#ccsBack', w).onclick = close; $$('#ccsGo', w).onclick = found;
+    $$('#ccsRand', w).onclick = () => { const pick = a => a[Math.floor(Math.random() * a.length)], col = () => '#' + [0, 0, 0].map(() => Math.floor(Math.random() * 200 + 30).toString(16).padStart(2, '0')).join('');
+      S.shape = pick(SHAPES); S.icon = pick(CC_ICONS); S.ks = Math.floor(Math.random() * 15); S.cc1 = S.h1 = col(); S.cc2 = S.h2 = col(); S.a1 = S.h2; S.a2 = S.h1; S.mode = 'design'; paint(); };
+    paint();
+  }
+  window.openClubCreator = open;
+  const ob = document.getElementById('openStudioBtn'); if (ob) ob.onclick = open;
+
+  /* ---- shortcuts ---- */
+  const go = (id, tabName) => { const e = document.getElementById(id); if (!e) return; const t = e.closest('div,button') || e; t.style.cursor = 'pointer'; t.addEventListener('click', ev => { if (ev.target.closest('button,a,input') && ev.target.closest('button,a,input') !== t) return; if (typeof G === 'undefined' || !G) return; goTo(tabName); }); t.title = t.title || 'Open ' + tabName; };
+  go('statDate', 'calendar'); go('statOvr', 'squad'); go('statPos', 'table'); go('statSquad', 'squad'); go('statBudget', 'transfers');
+  const wp = document.getElementById('winPill'); if (wp) { wp.style.cursor = 'pointer'; wp.title = 'Open transfers'; wp.onclick = () => goTo('transfers'); }
+  const mc = document.querySelector('header.top .myclub'); if (mc) { mc.style.cursor = 'pointer'; mc.title = 'Open your club'; mc.onclick = () => { if (G && !G.jobless) goTo('club'); }; }
+  const tk = document.getElementById('ticker'); if (tk) { tk.style.cursor = 'pointer'; tk.title = 'Open the news'; tk.onclick = () => goTo('news'); }
+  document.addEventListener('click', e => {
+    const sd = e.target.closest('#v-match .fixture .side'); if (!sd || typeof G === 'undefined' || !G || e.target.closest('button,a')) return;
+    const nm = (sd.querySelector('b') || {}).textContent; if (!nm) return;
+    const all = G.teams.concat(G.ov ? G.ov.teams : []), t = all.find(x => x.n === nm); if (!t) return;
+    if (t.id === G.myTeam) { goTo('club'); return; }
+    ocCC = t.ov ? t.cc : CUR_CC; ocTier = t.tier; ocPick = t.id; goTo('otherclubs');
+  });
+  document.querySelectorAll('#v-match').forEach(v => { v.addEventListener('mouseover', ev => { const sd = ev.target.closest('.fixture .side'); if (sd) sd.style.cursor = 'pointer'; }); });
+})();

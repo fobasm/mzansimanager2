@@ -2772,9 +2772,12 @@ function findPlayer(G, pid) {
 function foundClub(G, opts) {
   const candidates = G.teams.filter(t => t.tier === opts.tier && t.id !== G.myTeam).sort((a, b) => a.rep - b.rep);
   const target = candidates[0] || G.teams.filter(t => t.tier === opts.tier)[0];
-  target.n = opts.name; target.s = opts.name.length > 16 ? opts.name.slice(0, 16) : opts.name;
-  target.nick = 'The Newcomers'; target.city = opts.city;
+  target.n = opts.name; target.s = opts.short || (opts.name.length > 16 ? opts.name.slice(0, 16) : opts.name);
+  target.nick = opts.nick || 'The Newcomers'; target.city = opts.city;
   target.c1 = opts.c1; target.c2 = opts.c2; target.icon = opts.icon; target.shape = opts.shape;
+  delete target.cr; delete target.cimg; delete target.ck; delete target.a1; delete target.a2; delete target.kitStyle;
+  if (opts.a1) { target.a1 = opts.a1; target.a2 = opts.a2; } if (opts.kitStyle != null) target.kitStyle = opts.kitStyle;
+  if (opts.cr) target.cr = opts.cr; if (opts.cimg) { target.cimg = opts.cimg; target.icon = null; }
   target.badge = null; target.youthClub = false;
   target.base = clamp(target.base, 2.2, 6.5);
   target.squad = makeSquad(target, G.season);
@@ -4829,8 +4832,44 @@ function faceSVG(p, size, kit) {
 }
 
 /* ---------------- manager avatars ---------------- */
+/* ---------------- team edits (name + crest) and picture upload ---------------- */
+const TE_KEY = 'mm_team_edits_v1'; let _teRaw = null, _teObj = {};
+function teLoad() { let r = ''; try { r = localStorage.getItem(TE_KEY) || ''; } catch (e) { } if (r !== _teRaw) { _teRaw = r; try { _teObj = r ? (JSON.parse(r) || {}) : {}; } catch (e) { _teObj = {}; } } return _teObj; }
+function teSave(o) { try { localStorage.setItem(TE_KEY, JSON.stringify(o)); return true; } catch (e) { try { toast('This browser could not store the change (storage is full).'); } catch (e2) { } return false; } }
+function teView(cc, c) { const e = teLoad()[cc + '|' + c.n + '|' + c.s]; if (!e) return c; const d = Object.assign({}, c, { ck: c.n + '|' + c.s }); if (e.n) d.n = e.n; if (e.s) d.s = e.s; if (e.cr) d.cr = e.cr; if (e.cimg) d.cimg = e.cimg; return d; }
+function teApplyTo(t, cc, edits) { const e = edits[cc + '|' + t.n + '|' + t.s]; if (!e || t.ck) return; t.ck = t.n + '|' + t.s; if (e.n) t.n = e.n; if (e.s) t.s = e.s; if (e.cr) t.cr = e.cr; if (e.cimg) t.cimg = e.cimg; }
+function teApplyNew(G) { const ed = teLoad(); if (!Object.keys(ed).length) return; G.teBase = JSON.parse(JSON.stringify(ed)); G.teams.forEach(t => teApplyTo(t, G.cc || CUR_CC, ed)); if (G.ov) G.ov.teams.forEach(t => teApplyTo(t, t.cc, ed)); }
+function teApplyOv(G) { if (!G.teBase || !G.ov) return; G.ov.teams.forEach(t => teApplyTo(t, t.cc, G.teBase)); }
+function mmImgToData(file, max, kind) {
+  return new Promise((res, rej) => {
+    if (!file || (!/^image\//.test(file.type || '') && !/\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name || ''))) return rej(new Error('type'));
+    if (file.size > 15 * 1024 * 1024) return rej(new Error('big'));
+    const u = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      try {
+        const w = im.naturalWidth, h = im.naturalHeight; if (!w || !h) throw new Error('type');
+        const c = document.createElement('canvas'), x = c.getContext('2d');
+        if (kind === 'jpeg') { const sq = Math.min(w, h); c.width = c.height = max; x.fillStyle = '#fff'; x.fillRect(0, 0, max, max); x.drawImage(im, (w - sq) / 2, (h - sq) / 2, sq, sq, 0, 0, max, max); res(c.toDataURL('image/jpeg', 0.86)); }
+        else { const k = Math.min(1, max / Math.max(w, h)); c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k)); x.drawImage(im, 0, 0, c.width, c.height); res(c.toDataURL('image/png')); }
+      } catch (e) { rej(new Error('type')); }
+      URL.revokeObjectURL(u);
+    };
+    im.onerror = () => { URL.revokeObjectURL(u); rej(new Error('type')); };
+    im.src = u;
+  });
+}
+function mmPickImage(max, kind, cb) {
+  const f = document.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.style.display = 'none'; document.body.appendChild(f);
+  f.onchange = () => {
+    const file = f.files && f.files[0]; f.remove(); if (!file) return;
+    mmImgToData(file, max, kind).then(cb).catch(e => toast(e.message === 'big' ? 'That picture is over 15 MB. Pick a smaller one.' : 'That file could not be read as a picture. Use a JPG, PNG or WebP (iPhone HEIC photos: set the camera to Most Compatible, or screenshot the photo).'));
+  };
+  f.click();
+}
+function mmPickPhoto(cb) { mmPickImage(256, 'jpeg', cb); }
 function avatarSVG(id, size) {
   const s = size || 46;
+  if (typeof id === 'string' && id.indexOf('data:image/') === 0) return `<img class="face" src="${id}" width="${s}" height="${s}" style="object-fit:cover;border-radius:50%" alt="">`;
   return `<img class="face" src="managers/${id}.jpg" width="${s}" height="${s}" style="object-fit:cover" alt="">`;
 }
 
@@ -4902,16 +4941,17 @@ function crestHTML(t, size) {
   const base = crestBaseHTML(t, size), n = Math.min(5, cafStars(t)), sz = size || 22;
   if (!n || sz < 14) return base;
   const S = Math.round(sz * 1.5), p = Math.max(1, Math.round(S * 0.04));
-  const key = t.n + '|' + t.s, img = (window.CREST_EXTRA || {})[key] || CREST_IMGS[key];
-  const plain = !t.icon && t.badge !== 'bright' && !CREST_IMGS[key];
+  const key = t.ck || (t.n + '|' + t.s), img = t.cimg || t.cr || (window.CREST_EXTRA || {})[key] || CREST_IMGS[key];
+  const plain = !t.icon && t.badge !== 'bright' && !CREST_IMGS[key] && !t.cimg && !t.cr;
   const inn = Math.round((S - 2 * p) / (plain ? 1.15 : 1));
   const h = (!t.icon && t.badge !== 'bright' && !img) ? Math.round(inn * 1.15) : inn;
   const flat = crestStarsSVG(t, inn, h, n).replace('<svg ', '<svg class="cst-b" ');
   return `<span class="cstars" title="${cafStars(t)}x continental champions" style="position:relative;display:inline-block;flex:0 0 auto;line-height:0;vertical-align:middle">${base}${crestStarsArc(sz, n)}${flat}</span>`;
 }
-function crestBaseHTML(t, size) {   const _S = Math.round((size || 22) * 1.5), _p = Math.max(1, Math.round(_S * 0.04));   const _plain = !t.icon && t.badge !== 'bright' && !CREST_IMGS[t.n + '|' + t.s];   const _in = Math.round((_S - 2 * _p) / (_plain ? 1.15 : 1));   return `<span class="cbx" style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;box-sizing:border-box;width:${_S}px;height:${_S}px;padding:${_p}px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.4);vertical-align:middle">${crestRawHTML(t, _in)}</span>`; } function crestRawHTML(t, size) {
+function crestBaseHTML(t, size) {   const _S = Math.round((size || 22) * 1.5), _p = Math.max(1, Math.round(_S * 0.04));   const _plain = !t.icon && t.badge !== 'bright' && !CREST_IMGS[t.ck || (t.n + '|' + t.s)] && !t.cimg && !t.cr;   const _in = Math.round((_S - 2 * _p) / (_plain ? 1.15 : 1));   return `<span class="cbx" style="display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;box-sizing:border-box;width:${_S}px;height:${_S}px;padding:${_p}px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.4);vertical-align:middle">${crestRawHTML(t, _in)}</span>`; } function crestRawHTML(t, size) {
   const s = size || 22;
-  const _k = t.n + '|' + t.s, _ci = (window.CREST_EXTRA || {})[_k] || CREST_IMGS[_k];   if (_ci && t.badge !== 'bright' && !t.icon) {     return `<span class="crest img" style="width:${s}px;height:${s}px;border-radius:0;background-image:url('${_ci}')"></span>`;   }   if (t.badge === 'bright') {
+  if (t.cimg) return `<span class="crest img" style="width:${s}px;height:${s}px;border-radius:0;background-image:url('${t.cimg}');background-size:contain;background-repeat:no-repeat;background-position:center"></span>`;   if (t.cr) return crestCustomHTML(Object.assign({}, t, t.cr), s);
+  const _k = t.ck || (t.n + '|' + t.s), _ci = (window.CREST_EXTRA || {})[_k] || CREST_IMGS[_k];   if (_ci && t.badge !== 'bright' && !t.icon) {     return `<span class="crest img" style="width:${s}px;height:${s}px;border-radius:0;background-image:url('${_ci}')"></span>`;   }   if (t.badge === 'bright') {
     return `<span class="crest img" style="width:${s}px;height:${s}px;background-image:url('${IMG_BRIGHT}')"></span>`;
   }
   if (t.icon) return crestCustomHTML(t, s);
@@ -5164,6 +5204,7 @@ function ovEnsure(G) {
   if (!ov.ccs) ov.ccs = Array.from(new Set(ov.teams.map(t => t.cc)));
   ov.leagues.forEach(L => { if (!L.cc) L.cc = ov.cc; });
   ovCCs().forEach(cc => { if (!ov.ccs.includes(cc)) ovAddCountry(G, cc); });
+  try { teApplyOv(G); } catch (e) { }
 }
 function ovMatchStats(t, gf, ga, refresh) {
   if (!t._xi || refresh) { try { t._xi = autoLineup(t).slice(); } catch (e) { t._xi = []; } }
@@ -5265,6 +5306,7 @@ function cupList() {
   return [['cup', CUP_NAME], ['ekc', EKC_NAME], ['ecc', ECC_NAME]];
 }
 function kitStyleOf(t) {
+  if (t.kitStyle != null) return t.kitStyle;
   const key = (t.n || '') + '|' + (t.s || '');
   if (KIT_STYLE_OVERRIDE.hasOwnProperty(key)) return KIT_STYLE_OVERRIDE[key];
   const str = t.id || t.s || '';
@@ -5527,7 +5569,9 @@ const CREST_ICONS = {
   paw: '<circle cx="12" cy="14.5" r="3.4" fill="#fff"/><circle cx="7.3" cy="10.2" r="1.7" fill="#fff"/><circle cx="16.7" cy="10.2" r="1.7" fill="#fff"/><circle cx="9.3" cy="6.8" r="1.4" fill="#fff"/><circle cx="14.7" cy="6.8" r="1.4" fill="#fff"/>',
   bolt: '<path d="M13 2 5 13h5l-1 9 8-12h-5Z" fill="#fff"/>'
 };
+const CREST_EXTRA_SHAPES = { octagon: 'M8 1.5H16L22.5 8V16L16 22.5H8L1.5 16V8Z', oval: 'M12 1.2C17.6 1.2 21.5 5.6 21.5 12S17.6 22.8 12 22.8 2.5 18.4 2.5 12 6.4 1.2 12 1.2Z', arch: 'M2.5 22.5V10a9.5 9.5 0 0 1 19 0V22.5Z', kite: 'M12 1.2 21.5 9 12 22.8 2.5 9Z', banner: 'M3 2H21V22L12 17 3 22Z' };
 function crestShapeClip(shape) {
+  if (CREST_EXTRA_SHAPES[shape]) return `<path d="${CREST_EXTRA_SHAPES[shape]}"/>`;
   if (shape === 'circle') return `<circle cx="12" cy="12" r="11.2"/>`;
   if (shape === 'diamond') return `<path d="M12 1 22.5 12 12 23 1.5 12Z"/>`;
   if (shape === 'hexagon') return `<path d="M12 1 21 6.5V17.5L12 23 3 17.5V6.5Z"/>`;
@@ -5536,6 +5580,7 @@ function crestShapeClip(shape) {
   return `<path d="M12 1.4 21.6 4.6V12c0 5.6-3.9 9.7-9.6 11.6C6.3 21.7 2.4 17.6 2.4 12V4.6Z"/>`;
 }
 function crestShapeOutline(shape) {
+  if (CREST_EXTRA_SHAPES[shape]) return `<path d="${CREST_EXTRA_SHAPES[shape]}" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="1"/>`;
   if (shape === 'circle') return `<circle cx="12" cy="12" r="11.2" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="1"/>`;
   if (shape === 'diamond') return `<path d="M12 1 22.5 12 12 23 1.5 12Z" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="1"/>`;
   if (shape === 'hexagon') return `<path d="M12 1 21 6.5V17.5L12 23 3 17.5V6.5Z" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="1"/>`;
@@ -6081,6 +6126,11 @@ $('#favicon').href = 'mm-logo.jpg';
 
 function buildAvatars() {
   const w = $('#avPick'); w.innerHTML = '';
+  const custom = typeof pickAvatar === 'string' && pickAvatar.indexOf('data:image/') === 0;
+  const up = el('button', 'avbtn', custom ? avatarSVG(pickAvatar, 60) : '<span style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:60px;height:60px;font:700 24px var(--head);color:var(--dim);line-height:1">+<small style="font-size:10px;font-weight:600">Upload</small></span>');
+  up.setAttribute('aria-pressed', custom); up.title = 'Upload your own picture'; up.type = 'button';
+  up.onclick = () => mmPickPhoto(d => { pickAvatar = d; buildAvatars(); });
+  w.appendChild(up);
   MANAGER_AVATARS.forEach(id => {
     const b = el('button', 'avbtn', avatarSVG(id, 60));
     b.setAttribute('aria-pressed', pickAvatar === id);
@@ -6091,8 +6141,16 @@ function buildAvatars() {
 }
 function buildTierChips() {
   const bar = $('#pickTierBar'); if (!bar) return;
+  let cb = $('#pickCcBar'); if (!cb) { cb = el('div', 'chipbar'); cb.id = 'pickCcBar'; cb.style.cssText = 'padding-left:0;border:none;margin-bottom:4px'; bar.parentNode.insertBefore(cb, bar); }
+  cb.innerHTML = '';
+  [['ZA', 'South Africa'], ['GB', 'England'], ['ES', 'Spain']].forEach(([cc, nm]) => {
+    const b = el('button', 'chip', `<span style="display:inline-flex;vertical-align:middle;margin-right:7px">${flagSVG(cc, 22)}</span>${nm}`);
+    b.setAttribute('aria-pressed', cc === pickCC); b.type = 'button';
+    b.onclick = () => { if (pickCC === cc) return; pickCC = cc; pickTier = 0; pickClub = null; const sb = $('#startBtn'); if (sb) sb.disabled = true; const h = $('#startHint'); if (h) h.textContent = 'Select a club to begin.'; buildTierChips(); buildClubGrid(); };
+    cb.appendChild(b);
+  });
   bar.innerHTML = '';
-  const chips = TIER_NAMES_SA.map((n, i) => ({ cc: 'ZA', tier: i, label: n })).concat(TIER_NAMES_EN.map((n, i) => ({ cc: 'GB', tier: i, label: n })), TIER_NAMES_ES.map((n, i) => ({ cc: 'ES', tier: i, label: n })));
+  const chips = tierNamesFor(pickCC).map((n, i) => ({ cc: pickCC, tier: i, label: n }));
   const paint = () => bar.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.cc === pickCC && +x.dataset.tier === pickTier));
   chips.forEach(ch => {
     const b = el('button', 'chip', esc(ch.label));
@@ -6108,7 +6166,7 @@ function buildTierChips() {
 function buildClubGrid() {
   const g = $('#clubGrid'); g.innerHTML = '';
   if (pickClub != null) { $('#startBtn').disabled = false; $('#startBtn').removeAttribute('disabled'); }
-  worldClubs(pickCC).map((c, i) => ({ c, i })).sort((a, b) => a.c.n.localeCompare(b.c.n)).forEach(({ c, i }) => {
+  worldClubs(pickCC).map((c, i) => ({ c: teView(pickCC, c), i })).sort((a, b) => a.c.n.localeCompare(b.c.n)).forEach(({ c, i }) => {
     if (c.t !== pickTier) return;
     const b = el('button', 'club');
     b.setAttribute('aria-pressed', pickClub === i);
@@ -6124,25 +6182,25 @@ function buildClubGrid() {
 }
 buildTierChips();
 (function defaultClub() {
-  const bright = CLUBS_SA.findIndex(c => c.s === 'Bright PMB');
+  const bright = CLUBS_SA.findIndex(c => c.s === 'PMB');
   if (bright >= 0) {
     pickClub = bright; pickTier = CLUBS_SA[bright].t; pickCC = 'ZA';
-    const bar = $('#pickTierBar');
-    if (bar) bar.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.cc === pickCC && +x.dataset.tier === pickTier));
-    const hint = $('#startHint');
+    buildTierChips(); buildClubGrid();
+    const hint = $('#startHint'), sb = $('#startBtn'); if (sb) { sb.disabled = false; sb.removeAttribute('disabled'); }
+    if (hint) hint.textContent = CLUBS_SA[bright].n + ' - ' + TIER_SHORT_SA[CLUBS_SA[bright].t] + ', the game\'s default youth-first club.';
   }
 })();
 (function deepLink(){ try { const q = new URLSearchParams(location.search), c = q.get('club');
   if (c) { const find = L => L.findIndex(x => x.s.toLowerCase() === c.toLowerCase() || x.n.toLowerCase() === c.toLowerCase());
     let cc = 'ZA', L = CLUBS_SA, i = find(L); if (i < 0) { cc = 'GB'; L = CLUBS_EN; i = find(L); } if (i < 0) { cc = 'ES'; L = CLUBS_ES; i = find(L); }
-    if (i >= 0) { pickCC = cc; pickClub = i; pickTier = L[i].t; const bar = $('#pickTierBar'); if (bar) bar.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.cc === pickCC && +x.dataset.tier === pickTier)); buildClubGrid(); $('#startBtn').disabled = false; $('#startBtn').removeAttribute('disabled'); const h = $('#startHint'); if (h) h.textContent = L[i].n + ' - ' + tierShortFor(cc)[L[i].t] + '.'; } }
+    if (i >= 0) { pickCC = cc; pickClub = i; pickTier = L[i].t; try { buildTierChips(); buildClubGrid(); } catch (e) { } const bar = $('#pickTierBar'); if (bar) bar.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.cc === pickCC && +x.dataset.tier === pickTier)); buildClubGrid(); $('#startBtn').disabled = false; $('#startBtn').removeAttribute('disabled'); const h = $('#startHint'); if (h) h.textContent = L[i].n + ' - ' + tierShortFor(cc)[L[i].t] + '.'; } }
   if (c || q.has('start')) { $('#landing').style.display = 'none'; $('#start').style.display = 'block'; window.scrollTo(0, 0); } } catch (e) { } })();
 $('#startBtn').onclick = () => {
   const nm = ($('#mgrName').value || '').trim() || 'Coach';
   const nat = ($('#mgrNat') && $('#mgrNat').value) || 'ZA';
   const dob = ($('#mgrDob') && $('#mgrDob').value) || '1988-06-15';
-  if (slotInfo(slot)) slot = firstFreeSlot();
-  const c = worldClubs(pickCC)[pickClub];
+  if (!slotGuard()) return;
+  const c = teView(pickCC, worldClubs(pickCC)[pickClub]);
   const wage = Math.max(0.3, c.base * 1.1);
   openContractOffer({
     team: c, heading: 'Contract Offer', mgrName: nm, wage, years: 3, dateISO: new Date().toISOString().slice(0, 10),
@@ -6155,7 +6213,7 @@ $('#startBtn').onclick = () => {
     defaultKey: 'accept',
     onChoice: (k) => {
       if (k !== 'accept') return;
-      setCountry(pickCC); G = newGame(pickClub, { name: nm, avatar: pickAvatar, nat, dob }); if (window.__ctrTerms) { G.manager.wage = window.__ctrTerms.wage; G.manager.contractEnd = G.season + window.__ctrTerms.years - 1; } setTimeout(() => { try { showSponsors(); } catch (e) { } }, 1500);
+      setCountry(pickCC); G = newGame(pickClub, { name: nm, avatar: pickAvatar, nat, dob }); try { teApplyNew(G); } catch (e) { console.error('team edits', e); } if (window.__ctrTerms) { G.manager.wage = window.__ctrTerms.wage; G.manager.contractEnd = G.season + window.__ctrTerms.years - 1; } setTimeout(() => { try { showSponsors(); } catch (e) { } }, 1500);
       enterApp(); save();
     }
   });
@@ -6255,7 +6313,19 @@ function load(n) {
   } catch (e) { return false; }
 }
 function deleteSlot(n) {   try { localStorage.removeItem(slotKey(n)); } catch (e) { }   try { const meta = JSON.parse(localStorage.getItem(BACKUP_KEY) || 'null'); if (meta && meta.slot === n) { localStorage.removeItem(BACKUP_KEY); localStorage.removeItem(BACKUP_KEY + '_data'); } } catch (e) { }   setSlotName(n, ''); }
+function slotGuard() {
+  if (!slotInfo(slot)) return true;
+  const f = firstFreeSlot();
+  if (!anySlotFree()) {
+    openModal('All save slots are full', '<p style="margin:0;color:var(--dim)">You already have three careers saved. Delete one of them under <b>Saved careers</b> before you start a new career, so nothing gets overwritten.</p>',
+      '<button class="btn ghost sm" id="sgClose">Close</button><button class="btn sm" id="sgGo">Go to saved careers</button>');
+    $('#sgClose').onclick = closeModal; $('#sgGo').onclick = () => { closeModal(); const e = $('#slotStep'); if (e) e.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+    return false;
+  }
+  slot = f; try { buildSlots(); } catch (e) { } return true;
+}
 function firstFreeSlot() { for (let i = 1; i <= SLOT_COUNT; i++) if (!slotInfo(i)) return i; return 1; }
+function anySlotFree() { for (let i = 1; i <= SLOT_COUNT; i++) if (!slotInfo(i)) return true; return false; }
 function anySave() { for (let i = 1; i <= SLOT_COUNT; i++) if (slotInfo(i)) return true; return false; }
 
 function storageUsageKB() {
@@ -6273,6 +6343,7 @@ function buildSlots() {
   const note = $('#storageNote');
   if (note) { const kb = storageUsageKB(); note.textContent = `~${kb > 1024 ? (kb / 1024).toFixed(1) + 'MB' : kb + 'KB'} of local storage used by Mzansi Manager saves on this browser.`; }
   w.innerHTML = '';
+  if (!anySlotFree()) { const fn = document.createElement('div'); fn.className = 'slotFull'; fn.style.cssText = 'grid-column:1/-1;border:1px solid #c0392b;background:rgba(192,57,43,.14);border-radius:10px;padding:10px 12px;font-size:14px'; fn.innerHTML = '<b>All three slots are full.</b> Delete a career below to start a new one.'; w.appendChild(fn); }
   for (let i = 1; i <= SLOT_COUNT; i++) {
     const s = slotInfo(i);
     const d = document.createElement('div');
@@ -6307,7 +6378,7 @@ function buildSlots() {
 
 /* ---------------- tabs ---------------- */
 const MENU_SECTIONS = [
-  ['Career', [['inbox','Inbox'],['bathini','Bathini'],['match','Matchday'],['calendar','Calendar'],['table','League tables & fixtures']]],
+  ['Career', [['inbox','Inbox'],['bathini','Bathini'],['nandi','Nandi'],['match','Matchday'],['calendar','Calendar'],['table','League tables & fixtures']]],
   ['Squad', [['squad','Squad & Tactics'], ['youth','Academy & Training'],['transfers','Transfers'],['otherclubs','Other Clubs'],['scouting','Scouting']]],
   ['Competitions', [['cups','Cups'],['leagues','Other Leagues'],['africa','Continental football'],['nations','Nations'],['world','World players'],['clubrank','Club rankings'],['cities','Club Cities'],['stats','Player Stats']]],
   ['Club', [['club','Club & Finances'],['mmcoins','MM Coins'],['commercial','Sponsors & Commercial'],['stadium','Stadium & tickets'],['board','Board & objectives'], ['trophies','Trophy room'],['legends','MM Legends'],['manager','Manager'],['news','News']]],
@@ -6371,7 +6442,7 @@ function render() { try { checkManagerBirthday(); } catch (e) { } try { updateNa
   const active = $('#v-' + tab);
   if (active) active.classList.add('on');
   const dispatch = { match: viewMatch, table: viewTable, fixtures: viewFixtures, squad: viewSquadHub, tactics: viewSquadHub, finances: viewFinances, trophies: viewTrophies,
-     transfers: viewTransfers, youth: viewYouthHub, training: viewYouthHub, inbox: viewInbox, bathini: viewBathini, stats: viewStats, news: viewNews,
+     transfers: viewTransfers, youth: viewYouthHub, training: viewYouthHub, inbox: viewInbox, bathini: viewBathini, nandi: (window.viewNandi || viewMatch), stats: viewStats, news: viewNews,
       cups: viewCups, africa: viewAfrica, nations: viewNations, world: viewWorld, clubrank: viewClubRank, cities: viewCities, commercial: viewCommercial, stadium: viewStadium, board: viewBoard, legends: viewLegends, stadium: viewStadium, calendar: viewCalendar, watchlist: viewWatchlist, scouting: viewScouting,
      info: viewInfo, getadded: viewGetAdded, createclub: viewCreateClub, manager: viewManager, otherclubs: viewOtherClubs, leagues: viewLeagues, club: viewClub, mmcoins: viewMMCoins };
   try {
